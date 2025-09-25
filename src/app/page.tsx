@@ -107,7 +107,7 @@ export default function LoginPage() {
                 </span>
               </div>
             </div>
-            <Button variant="secondary" className="w-full" onClick={() => router.push('/dashboard')}>
+            <Button variant="secondary" className="w-full" onClick={() => router.push('/onboarding')}>
               Continue as a Guest
             </Button>
           </div>
