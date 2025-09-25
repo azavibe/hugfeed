@@ -11,7 +11,7 @@ import { Label } from '@/components/ui/label';
 import { PlaceHolderImages } from '@/lib/placeholder-images';
 import { Logo } from '@/components/icons';
 import { useAuth } from '@/firebase';
-import { GoogleAuthProvider, signInWithRedirect } from 'firebase/auth';
+import { GoogleAuthProvider, signInWithPopup } from 'firebase/auth';
 import { useUser } from '@/firebase/auth/use-user';
 
 
@@ -30,9 +30,11 @@ export default function LoginPage() {
 
   const signInWithGoogle = async () => {
     if (auth) {
+      auth.tenantId = null;
       const provider = new GoogleAuthProvider();
       try {
-        await signInWithRedirect(auth, provider);
+        await signInWithPopup(auth, provider);
+        router.push('/dashboard');
       } catch (error) {
         console.error('Error signing in with Google', error);
       }
