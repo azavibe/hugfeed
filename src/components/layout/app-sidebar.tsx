@@ -22,9 +22,6 @@ import {
   Gem,
 } from 'lucide-react';
 import { UserNav } from './user-nav';
-import { useUser } from '@/firebase/auth/use-user';
-import { useEffect } from 'react';
-import { useRouter } from 'next/navigation';
 
 const navItems = [
   { href: '/dashboard', icon: Calendar, label: 'Calendar' },
@@ -35,15 +32,6 @@ const navItems = [
 
 export default function AppSidebar() {
   const pathname = usePathname();
-  const { user, loading } = useUser();
-  const router = useRouter();
-
-  useEffect(() => {
-    if (!loading && !user) {
-      router.push('/');
-    }
-  }, [user, loading, router]);
-
 
   return (
     <Sidebar>

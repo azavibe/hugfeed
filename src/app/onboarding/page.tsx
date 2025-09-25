@@ -3,27 +3,21 @@
 import OnboardingFlow from "@/components/onboarding/onboarding-flow";
 import { Logo } from "@/components/icons";
 import { useUser } from "@/firebase/auth/use-user";
-import { useRouter } from "next/navigation";
-import { useEffect } from "react";
 
 export default function OnboardingPage() {
     const { user, loading } = useUser();
-    const router = useRouter();
 
-    useEffect(() => {
-        if (!loading && !user) {
-            router.push('/');
-        }
-    }, [user, loading, router]);
-
-
-    if (loading || !user) {
+    if (loading) {
         return (
             <div className="w-full min-h-screen flex items-center justify-center">
                 <p>Loading...</p>
             </div>
         );
     }
+    
+    // Guest users don't need to onboard, but we can show this page
+    // if a user is logged in and hasn't completed it.
+    // For now, guests can access it if they navigate directly.
 
     return (
         <div className="container mx-auto flex min-h-screen flex-col items-center justify-center p-4">

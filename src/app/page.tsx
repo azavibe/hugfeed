@@ -30,7 +30,6 @@ export default function LoginPage() {
 
   const signInWithGoogle = async () => {
     if (auth) {
-      auth.tenantId = null;
       const provider = new GoogleAuthProvider();
       try {
         await signInWithPopup(auth, provider);
@@ -41,11 +40,21 @@ export default function LoginPage() {
     }
   };
   
-  if (loading || user) {
+  if (loading) {
     return (
       <div className="w-full min-h-screen flex items-center justify-center">
         <p>Loading...</p>
       </div>
+    );
+  }
+  
+  // If user is already logged in, this page will redirect via useEffect.
+  // We don't want to show the login form if a user object exists.
+  if (user) {
+    return (
+        <div className="w-full min-h-screen flex items-center justify-center">
+            <p>Redirecting...</p>
+        </div>
     );
   }
 
@@ -87,6 +96,19 @@ export default function LoginPage() {
             </Button>
             <Button variant="outline" className="w-full" onClick={signInWithGoogle}>
               Login with Google
+            </Button>
+            <div className="relative">
+              <div className="absolute inset-0 flex items-center">
+                <span className="w-full border-t" />
+              </div>
+              <div className="relative flex justify-center text-xs uppercase">
+                <span className="bg-background px-2 text-muted-foreground">
+                  Or
+                </span>
+              </div>
+            </div>
+            <Button variant="secondary" className="w-full" onClick={() => router.push('/dashboard')}>
+              Continue as a Guest
             </Button>
           </div>
           <div className="mt-4 text-center text-sm">

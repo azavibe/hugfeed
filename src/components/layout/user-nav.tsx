@@ -12,7 +12,7 @@ import {
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import Link from 'next/link';
-import { LogOut, Settings } from 'lucide-react';
+import { LogIn, LogOut, Settings, User as UserIcon } from 'lucide-react';
 import { useAuth } from '@/firebase';
 import { useUser } from '@/firebase/auth/use-user';
 import { signOut } from 'firebase/auth';
@@ -32,13 +32,16 @@ export function UserNav() {
   };
 
   if (loading) {
-    return <div>Loading...</div>;
+    return <div className="h-12 w-full animate-pulse bg-muted rounded-md"></div>;
   }
   
   if (!user) {
     return (
-      <Link href="/">
-        <Button variant="outline">Login</Button>
+      <Link href="/" className='w-full'>
+        <Button variant="outline" className='w-full justify-start'>
+          <LogIn className="mr-2 h-4 w-4" />
+          Login / Sign Up
+        </Button>
       </Link>
     );
   }
