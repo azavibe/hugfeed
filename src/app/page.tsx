@@ -1,15 +1,52 @@
+'use client';
 import Image from 'next/image';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
+import { useEffect } from 'react';
 
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { PlaceHolderImages } from '@/lib/placeholder-images';
 import { Logo } from '@/components/icons';
+import { useAuth } from '@/firebase';
+import { GoogleAuthProvider, signInWithPopup } from 'firebase/auth';
+import { useUser } from '@/firebase/auth/use-user';
+
 
 export default function LoginPage() {
   const loginImage = PlaceHolderImages.find((image) => image.id === 'login-background');
+  const auth = useAuth();
+  const { user, loading } = useUser();
+  const router = useRouter();
+
+  useEffect(() => {
+    if (!loading && user) {
+      router.push('/dashboard');
+    }
+  }, [user, loading, router]);
+
+
+  const signInWithGoogle = async () => {
+    if (auth) {
+      const provider = new GoogleAuthProvider();
+      try {
+        await signInWithPopup(auth, provider);
+        router.push('/dashboard');
+      } catch (error) {
+        console.error('Error signing in with Google', error);
+      }
+    }
+  };
+  
+  if (loading || user) {
+    return (
+      <div className="w-full min-h-screen flex items-center justify-center">
+        <p>Loading...</p>
+      </div>
+    );
+  }
 
   return (
     <div className="w-full lg:grid lg:min-h-screen lg:grid-cols-2">
@@ -44,12 +81,10 @@ export default function LoginPage() {
               </div>
               <Input id="password" type="password" required />
             </div>
-            <Link href="/onboarding">
-              <Button type="submit" className="w-full">
-                Login
-              </Button>
-            </Link>
-            <Button variant="outline" className="w-full">
+            <Button type="submit" className="w-full">
+              Login
+            </Button>
+            <Button variant="outline" className="w-full" onClick={signInWithGoogle}>
               Login with Google
             </Button>
           </div>
