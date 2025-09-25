@@ -1,3 +1,34 @@
 {
-  "placeholderImages": []
+  "placeholderImages": [
+    {
+      "id": "login-background",
+      "description": "Abstract lavender and rose background for login page",
+      "imageUrl": "https://images.unsplash.com/photo-1758364752537-1c1587cfb2dc?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHw4fHxhYnN0cmFjdCUyMHNlcmVuZXxlbnwwfHx8fDE3NTg4MzA1MTR8MA&ixlib=rb-4.1.0&q=80&w=1080",
+      "imageHint": "abstract serene"
+    },
+    {
+      "id": "avatar-1",
+      "description": "User avatar 1",
+      "imageUrl": "https://images.unsplash.com/flagged/photo-1559855603-ce4c8f480d76?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHw0fHx3b21hbiUyMHNtaWxpbmd8ZW58MHx8fHwxNzU4NzU5NDE0fDA&ixlib=rb-4.1.0&q=80&w=1080",
+      "imageHint": "woman smiling"
+    },
+    {
+      "id": "avatar-2",
+      "description": "User avatar 2",
+      "imageUrl": "https://images.unsplash.com/photo-1568602471122-7832951cc4c5?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHw5fHxtYW4lMjBwb3J0cmFpdHxlbnwwfHx8fDE3NTg3MDg5NTd8MA&ixlib=rb-4.1.0&q=80&w=1080",
+      "imageHint": "man portrait"
+    },
+    {
+      "id": "pricing-monthly",
+      "description": "Image for monthly pricing plan",
+      "imageUrl": "https://images.unsplash.com/photo-1629807442718-08059527a9b5?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHw3fHx6ZW4lMjBwZWJibGVzfGVufDB8fHx8MTc1ODgzMDUxNHww&ixlib=rb-4.1.0&q=80&w=1080",
+      "imageHint": "zen pebbles"
+    },
+    {
+      "id": "pricing-yearly",
+      "description": "Image for yearly pricing plan",
+      "imageUrl": "https://images.unsplash.com/photo-1757509938342-0fd7dd95fee1?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHw3fHxwYXRoJTIwZm9yZXN0fGVufDB8fHx8MTc1ODc5MDc5MXww&ixlib=rb-4.1.0&q=80&w=1080",
+      "imageHint": "path forest"
+    }
+  ]
 }
