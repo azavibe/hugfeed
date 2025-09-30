@@ -29,11 +29,11 @@ const DayPicker = ({ selectedDate, onDateChange }: { selectedDate: Date; onDateC
         align: "start",
         startIndex: selectedIndex > -1 ? selectedIndex -2: 0, // Start with the selected date in view
       }}
-      className="w-full"
+      className="w-full max-w-sm sm:max-w-md mx-auto"
     >
       <CarouselContent>
         {days.map((day) => (
-          <CarouselItem key={day.toString()} className="basis-1/5 sm:basis-[calc(20%-0.8rem)]">
+          <CarouselItem key={day.toString()} className="basis-1/5">
              <Button
                 variant={isSameDay(day, selectedDate) ? 'default' : 'ghost'}
                 className="flex flex-col h-auto p-2 w-full"
