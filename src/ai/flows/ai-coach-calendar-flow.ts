@@ -11,6 +11,7 @@
 
 import {ai} from '@/ai/genkit';
 import {z} from 'genkit';
+import { Message } from 'genkit/model';
 
 
 // Define a tool for adding tasks to the user's calendar
@@ -96,7 +97,7 @@ User Query:
     
     // Check if the model requested to use any tools.
     if (toolCalls && toolCalls.length > 0) {
-        const toolResponses = [];
+        const toolResponses: Message[] = [];
         for (const call of toolCalls) {
             // We only have one tool, but this pattern is good for multiple tools.
             if (call.tool === 'addTask') {
@@ -104,9 +105,14 @@ User Query:
                 generatedTasks = call.input.tasks;
                 // Create a response to send back to the model, confirming the tool "ran".
                 toolResponses.push({
-                    tool: 'toolResponse',
-                    ref: call.ref,
-                    data: { output: { success: true } },
+                    role: 'tool',
+                    content: [
+                        {
+                            type: 'toolResponse',
+                            ref: call.ref,
+                            data: { output: { success: true } },
+                        }
+                    ]
                 });
             }
         }
