@@ -83,41 +83,45 @@ export const AppStateProvider = ({ children }: { children: ReactNode }) => {
 
   const debounceTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
-  // Centralized function to save all state to the appropriate storage.
-  const saveData = useCallback((data: Omit<AppContextType, 'isDataLoading'>) => {
+  const saveDataToFirestore = useCallback((data: Omit<AppContextType, 'isDataLoading' | 'setMessages' | 'addJournalEntry' | 'updateTaskCompletion' | 'addTask' | 'updateUserProfile' >) => {
     if (user && db) {
         if (debounceTimeoutRef.current) {
             clearTimeout(debounceTimeoutRef.current);
         }
         debounceTimeoutRef.current = setTimeout(async () => {
+            console.log(`Saving data to Firestore for user: ${user.uid}`);
             try {
                 const userDocRef = doc(db, 'users', user.uid);
                 await setDoc(userDocRef, convertDatesToTimestamps(data));
+                console.log('Data saved successfully.');
             } catch (error) {
                 console.error("Error saving state to Firestore:", error);
             }
-        }, 1000); // Debounce saves by 1 second
-    } else {
-        localStorage.setItem('calendarData', JSON.stringify(data.calendarData));
-        localStorage.setItem('chatMessages', JSON.stringify(data.messages));
-        localStorage.setItem('userProfile', JSON.stringify(data.userProfile));
+        }, 1000); 
     }
   }, [user, db]);
 
-  // Load data from Firestore or localStorage on initial mount or user change
   useEffect(() => {
     const loadData = async () => {
         setIsDataLoading(true);
+        console.log('AppContext: useEffect loadData triggered.');
+
         if (user && db) {
+            console.log(`Authenticated user found: ${user.uid}. DB instance available:`, !!db);
             const userDocRef = doc(db, 'users', user.uid);
             try {
+                console.log(`Fetching document from Firestore: users/${user.uid}`);
                 const docSnap = await getDoc(userDocRef);
+                
                 if (docSnap.exists()) {
+                    console.log("Document found in Firestore. Processing data...");
                     const data = convertTimestampsToDates(docSnap.data());
                     setCalendarData(data.calendarData || generateMockCalendarData());
                     setMessages(data.messages || initialMessages);
                     setUserProfile(data.userProfile || initialUserProfile);
+                    console.log("State updated from Firestore data.");
                 } else {
+                    console.log("No document found for user. Creating initial data structure.");
                     const initialData = {
                         calendarData: generateMockCalendarData(),
                         messages: initialMessages,
@@ -126,16 +130,18 @@ export const AppStateProvider = ({ children }: { children: ReactNode }) => {
                     setCalendarData(initialData.calendarData);
                     setMessages(initialData.messages);
                     setUserProfile(initialData.userProfile);
-                    // Save this initial structure for the new user
                     await setDoc(userDocRef, convertDatesToTimestamps(initialData));
+                    console.log("Initial data created and saved for new user.");
                 }
             } catch (error) {
                  console.error("Error fetching user data from Firestore:", error);
+                 console.log("Falling back to mock data due to error.");
                  setCalendarData(generateMockCalendarData());
                  setMessages(initialMessages);
                  setUserProfile(initialUserProfile);
             }
         } else {
+            console.log("No authenticated user. Loading data from localStorage for guest.");
             try {
                 const storedCalendarData = localStorage.getItem('calendarData');
                 const storedMessages = localStorage.getItem('chatMessages');
@@ -144,6 +150,7 @@ export const AppStateProvider = ({ children }: { children: ReactNode }) => {
                 setCalendarData(storedCalendarData ? JSON.parse(storedCalendarData).map((day: any) => ({ ...day, date: new Date(day.date) })) : generateMockCalendarData());
                 setMessages(storedMessages ? JSON.parse(storedMessages) : initialMessages);
                 setUserProfile(storedProfile ? JSON.parse(storedProfile) : initialUserProfile);
+                console.log("Guest data loaded from localStorage.");
             } catch (error) {
                 console.error("Failed to load guest data from localStorage:", error);
                 setCalendarData(generateMockCalendarData());
@@ -152,6 +159,7 @@ export const AppStateProvider = ({ children }: { children: ReactNode }) => {
             }
         }
         setIsDataLoading(false);
+        console.log("Data loading process finished.");
     };
     loadData();
 
@@ -162,47 +170,11 @@ export const AppStateProvider = ({ children }: { children: ReactNode }) => {
     }
   }, [user, db]);
 
-  const updateStateAndSave = useCallback((updateFn: (prevState: AppContextType) => Partial<Omit<AppContextType, 'isDataLoading'>> ) => {
-    let newFullState: AppContextType | null = null;
-    
-    setCalendarData(prevCal => {
-        setMessages(prevMsg => {
-            setUserProfile(prevProfile => {
-                const currentState = {
-                    calendarData: prevCal,
-                    messages: prevMsg,
-                    userProfile: prevProfile,
-                    isDataLoading, // Not used in updateFn, just for type consistency
-                } as AppContextType;
-
-                const updates = updateFn(currentState);
-                
-                const newState = {
-                    calendarData: updates.calendarData ?? prevCal,
-                    messages: updates.messages ?? prevMsg,
-                    userProfile: updates.userProfile ?? prevProfile,
-                };
-
-                newFullState = { ...newState, isDataLoading } as AppContextType;
-
-                saveData(newState);
-                
-                return newState.userProfile;
-            });
-            return (newFullState as AppContextType).messages;
-        });
-        return (newFullState as AppContextType).calendarData;
-    });
-
-  }, [saveData, isDataLoading]);
-
-
   const addJournalEntry = (entry: Omit<JournalEntry, 'id' | 'date'> & { date: Date, mood: Mood }) => {
-    updateStateAndSave(prevState => {
+    setCalendarData(prevCalendarData => {
         const newEntry: JournalEntry = { id: `journal-${Date.now()}`, ...entry };
         let dayFound = false;
-
-        const newCalendarData = prevState.calendarData.map(day => {
+        const newCalendarData = prevCalendarData.map(day => {
             if (isSameDay(day.date, entry.date)) {
                 dayFound = true;
                 return { ...day, journalEntry: newEntry, mood: entry.mood };
@@ -220,29 +192,31 @@ export const AppStateProvider = ({ children }: { children: ReactNode }) => {
             newCalendarData.sort((a,b) => b.date.getTime() - a.date.getTime());
         }
 
-        return { calendarData: newCalendarData };
+        saveDataToFirestore({ calendarData: newCalendarData, messages, userProfile });
+        return newCalendarData;
     });
   };
 
   const updateTaskCompletion = (taskId: string, completed: boolean) => {
-    updateStateAndSave(prevState => {
-        const newCalendarData = prevState.calendarData.map(day => ({
+    setCalendarData(prevCalendarData => {
+        const newCalendarData = prevCalendarData.map(day => ({
             ...day,
             tasks: day.tasks.map(task => 
                 task.id === taskId ? { ...task, completed } : task
             ),
         }));
-        return { calendarData: newCalendarData };
+        saveDataToFirestore({ calendarData: newCalendarData, messages, userProfile });
+        return newCalendarData;
     });
   };
 
   const addTask = (task: Omit<Task, 'id'>, date: Date) => {
-    updateStateAndSave(prevState => {
+    setCalendarData(prevCalendarData => {
         const targetDate = startOfDay(date);
         const newTask: Task = { id: `task-${Date.now()}`, ...task };
         let dayFound = false;
 
-        const newCalendarData = prevState.calendarData.map(day => {
+        const newCalendarData = prevCalendarData.map(day => {
             if (isSameDay(day.date, targetDate)) {
                 dayFound = true;
                 return { ...day, tasks: [...day.tasks, newTask] };
@@ -259,18 +233,24 @@ export const AppStateProvider = ({ children }: { children: ReactNode }) => {
             });
             newCalendarData.sort((a,b) => b.date.getTime() - a.date.getTime());
         }
-        return { calendarData: newCalendarData };
+        saveDataToFirestore({ calendarData: newCalendarData, messages, userProfile });
+        return newCalendarData;
     });
   };
 
   const updateUserProfile = (profile: UserProfile) => {
-    updateStateAndSave(() => ({ userProfile: profile }));
+    setUserProfile(profile);
+    saveDataToFirestore({ calendarData, messages, userProfile: profile });
   };
   
   const setMessagesWithPersistence: React.Dispatch<React.SetStateAction<Message[]>> = (action) => {
       const newMessages = typeof action === 'function' ? action(messages) : action;
-      setMessages(newMessages); // Optimistic update
-      saveData({ calendarData, messages: newMessages, userProfile }); // Save in background
+      setMessages(newMessages); 
+      if (!user) {
+        localStorage.setItem('chatMessages', JSON.stringify(newMessages));
+      } else {
+        saveDataToFirestore({ calendarData, messages: newMessages, userProfile });
+      }
   };
 
   return (
