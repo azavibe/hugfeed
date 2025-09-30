@@ -7,6 +7,7 @@ import { generateMockCalendarData } from '@/lib/data';
 import { isSameDay, startOfDay } from 'date-fns';
 import { useUser } from '@/firebase/auth/use-user';
 import { getFirestore, doc, getDoc, setDoc } from 'firebase/firestore';
+import { useFirestore } from '@/firebase';
 
 const initialMessages: Message[] = [
     {
@@ -28,49 +29,58 @@ interface AppContextType {
 
 const AppContext = createContext<AppContextType | undefined>(undefined);
 
-// Firestore utility functions
-const db = getFirestore();
-
-const getUserData = async (userId: string) => {
-    const userDocRef = doc(db, 'users', userId);
-    const docSnap = await getDoc(userDocRef);
-    if (docSnap.exists()) {
-        const data = docSnap.data();
-        // Dates need to be re-hydrated from Firestore Timestamps or strings
-        const calendarData = data.calendarData?.map((day: any) => ({
-            ...day,
-            date: day.date.toDate(),
-            journalEntry: day.journalEntry ? { ...day.journalEntry, date: day.journalEntry.date.toDate() } : undefined,
-        })) || [];
-        const messages = data.messages || initialMessages;
-        return { calendarData, messages };
-    }
-    return { calendarData: null, messages: null };
-};
-
-const setUserData = async (userId: string, data: { calendarData: CalendarDay[], messages: Message[] }) => {
-    const userDocRef = doc(db, 'users', userId);
-    await setDoc(userDocRef, data, { merge: true });
-};
-
-
 export const AppStateProvider = ({ children }: { children: ReactNode }) => {
   const { user } = useUser();
+  const db = useFirestore(); // Use the initialized firestore instance from context
   const [calendarData, setCalendarData] = useState<CalendarDay[]>([]);
   const [messages, setMessages] = useState<Message[]>(initialMessages);
   const [isDataLoading, setIsDataLoading] = useState(true);
   const [isInitialLoad, setIsInitialLoad] = useState(true);
 
+  // Firestore utility functions
+  const getUserData = async (userId: string) => {
+      if (!db) return { calendarData: null, messages: null };
+      const userDocRef = doc(db, 'users', userId);
+      try {
+        const docSnap = await getDoc(userDocRef);
+        if (docSnap.exists()) {
+            const data = docSnap.data();
+            // Dates need to be re-hydrated from Firestore Timestamps or strings
+            const calendarData = data.calendarData?.map((day: any) => ({
+                ...day,
+                date: day.date.toDate(),
+                journalEntry: day.journalEntry ? { ...day.journalEntry, date: day.journalEntry.date.toDate() } : undefined,
+            })) || [];
+            const messages = data.messages || initialMessages;
+            return { calendarData, messages };
+        }
+      } catch (error) {
+        console.error("Error getting user data from Firestore:", error);
+      }
+      return { calendarData: null, messages: null };
+  };
+
+  const setUserData = async (userId: string, data: { calendarData: CalendarDay[], messages: Message[] }) => {
+      if (!db) return;
+      const userDocRef = doc(db, 'users', userId);
+      try {
+        await setDoc(userDocRef, data, { merge: true });
+      } catch(error) {
+        console.error("Error setting user data in Firestore:", error);
+      }
+  };
+
+
   // Load data based on user auth state
   useEffect(() => {
     const loadData = async () => {
         setIsDataLoading(true);
-        if (user) {
+        if (user && db) {
             // Logged-in user: fetch from Firestore
             const { calendarData: firestoreCalendar, messages: firestoreMessages } = await getUserData(user.uid);
             setCalendarData(firestoreCalendar || generateMockCalendarData());
             setMessages(firestoreMessages || initialMessages);
-        } else {
+        } else if (!user) {
             // Guest user: fetch from localStorage
             try {
                 const storedCalendarData = localStorage.getItem('calendarData');
@@ -102,7 +112,7 @@ export const AppStateProvider = ({ children }: { children: ReactNode }) => {
         setIsInitialLoad(false);
     };
     loadData();
-  }, [user]);
+  }, [user, db]);
 
   // Save data when it changes
   useEffect(() => {

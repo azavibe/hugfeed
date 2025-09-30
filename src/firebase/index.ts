@@ -15,7 +15,13 @@ function initializeFirebase() {
   if (getApps().length === 0) {
     firebaseApp = initializeApp(firebaseConfig);
     auth = getAuth(firebaseApp);
-    firestore = getFirestore(firebaseApp);
+    // Connect to the specific 'hugfeeddb' database
+    firestore = getFirestore(firebaseApp, 'hugfeeddb');
+  } else {
+    // On subsequent loads (like in Next.js hot-reloading), get the existing instances.
+    firebaseApp = getApps()[0];
+    auth = getAuth(firebaseApp);
+    firestore = getFirestore(firebaseApp, 'hugfeeddb');
   }
   return {firebaseApp, auth, firestore};
 }
