@@ -42,9 +42,7 @@ export default function AppSidebar() {
           <Logo className="w-8 h-8 text-primary" />
           <span className="font-headline text-lg">Hugfeed</span>
         </Link>
-        <div className="md:hidden">
-            <SidebarTrigger />
-        </div>
+        <SidebarTrigger />
       </SidebarHeader>
       <SidebarContent className="p-2">
         <SidebarMenu>
