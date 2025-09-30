@@ -179,11 +179,7 @@ export default function InsightsPage() {
                     cursor={false}
                     content={<ChartTooltipContent />}
                   />
-                  <Bar dataKey="tasksCompleted" fill="var(--color-tasksCompleted)" radius={4}>
-                     {weeklyCompletionData.map((entry, index) => (
-                        <Cell key={`cell-${index}`} fill={"hsl(var(--chart-1))"} />
-                    ))}
-                  </Bar>
+                  <Bar dataKey="tasksCompleted" fill="var(--color-tasksCompleted)" radius={4} />
                 </RechartsBarChart>
               </ChartContainer>
             ) : (
