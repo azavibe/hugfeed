@@ -71,8 +71,14 @@ export const AppStateProvider = ({ children }: { children: ReactNode }) => {
             mood: day.mood || null,
             journalEntry: day.journalEntry || null,
         }));
+        
+        const sanitizedMessages = data.messages.map(message => ({
+            ...message,
+            image: message.image || null,
+            suggestions: message.suggestions || null,
+        }));
 
-        await setDoc(userDocRef, { ...data, calendarData: sanitizedCalendarData }, { merge: true });
+        await setDoc(userDocRef, { calendarData: sanitizedCalendarData, messages: sanitizedMessages }, { merge: true });
       } catch(error) {
         console.error("Error setting user data in Firestore:", error);
       }
