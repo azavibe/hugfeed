@@ -38,11 +38,13 @@ export default function AppSidebar() {
   return (
     <Sidebar>
       <SidebarHeader className="flex items-center justify-between">
-        <Link href="/dashboard" className="flex items-center gap-2">
-          <Logo className="w-8 h-8 text-primary" />
-          <span className="font-headline text-lg">Hugfeed</span>
-        </Link>
-        <SidebarTrigger />
+        <div className="flex items-center gap-2">
+            <Link href="/dashboard" className="flex items-center gap-2">
+              <Logo className="w-8 h-8 text-primary" />
+              <span className="font-headline text-lg">Hugfeed</span>
+            </Link>
+        </div>
+        <SidebarTrigger className="hidden md:flex" />
       </SidebarHeader>
       <SidebarContent className="p-2">
         <SidebarMenu>
