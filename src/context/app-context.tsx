@@ -196,37 +196,34 @@ export const AppStateProvider = ({ children }: { children: ReactNode }) => {
   };
 
   const addJournalEntry = (entry: Omit<JournalEntry, 'id'> & { date: Date, mood: Mood }) => {
-    const newEntry: JournalEntry = { id: `journal-${Date.now()}`, ...entry };
-    let dayFound = false;
-    
-    const newCalendarData = calendarData.map(day => {
-        if (isSameDay(day.date, entry.date)) {
-            dayFound = true;
-            return { ...day, journalEntry: newEntry, mood: entry.mood };
-        }
-        return day;
-    });
-
-    if (!dayFound) {
-        newCalendarData.push({
-            date: startOfDay(entry.date),
-            tasks: [],
-            journalEntry: newEntry,
-            mood: entry.mood,
+        const newEntry: JournalEntry = { id: `journal-${Date.now()}`, ...entry };
+        let dayFound = false;
+        const newCalendarData = calendarData.map((day: CalendarDay) => {
+            if (isSameDay(day.date, entry.date)) {
+                dayFound = true;
+                return { ...day, journalEntry: newEntry, mood: entry.mood };
+            }
+            return day;
         });
-        newCalendarData.sort((a,b) => b.date.getTime() - a.date.getTime());
-    }
-
-    updateStateAndPersist(newCalendarData, messages, userProfile);
-  };
+        if (!dayFound) {
+            newCalendarData.push({
+                date: startOfDay(entry.date),
+                tasks: [],
+                journalEntry: newEntry,
+                mood: entry.mood,
+            });
+            newCalendarData.sort((a: CalendarDay, b: CalendarDay) => b.date.getTime() - a.date.getTime());
+        }
+        updateStateAndPersist(newCalendarData, messages, userProfile);
+    };
 
   const updateTaskCompletion = (taskId: string, completed: boolean) => {
-    const newCalendarData = calendarData.map(day => ({
-        ...day,
-        tasks: day.tasks.map(task => 
-            task.id === taskId ? { ...task, completed } : task
-        ),
-    }));
+        const newCalendarData = calendarData.map((day: CalendarDay) => ({
+            ...day,
+            tasks: day.tasks.map((task: Task) =>
+                task.id === taskId ? { ...task, completed } : task
+            ),
+        }));
     updateStateAndPersist(newCalendarData, messages, userProfile);
   };
 
@@ -235,22 +232,22 @@ export const AppStateProvider = ({ children }: { children: ReactNode }) => {
     const newTask: Task = { id: `task-${Date.now()}`, ...task };
     let dayFound = false;
 
-    let newCalendarData = calendarData.map(day => {
-        if (isSameDay(day.date, targetDate)) {
-            dayFound = true;
-            return { ...day, tasks: [...day.tasks, newTask] };
-        }
-        return day;
-    });
+        let newCalendarData = calendarData.map((day: CalendarDay) => {
+            if (isSameDay(day.date, targetDate)) {
+                dayFound = true;
+                return { ...day, tasks: [...day.tasks, newTask] };
+            }
+            return day;
+        });
 
     if (!dayFound) {
-        newCalendarData.push({
-            date: targetDate,
-            tasks: [newTask],
-            mood: undefined,
-            journalEntry: undefined,
-        });
-        newCalendarData.sort((a,b) => b.date.getTime() - a.date.getTime());
+                newCalendarData.push({
+                    date: targetDate,
+                    tasks: [newTask],
+                    mood: undefined,
+                    journalEntry: undefined,
+                });
+                newCalendarData.sort((a: CalendarDay, b: CalendarDay) => b.date.getTime() - a.date.getTime());
     }
     updateStateAndPersist(newCalendarData, messages, userProfile);
   };
@@ -260,7 +257,7 @@ export const AppStateProvider = ({ children }: { children: ReactNode }) => {
   };
   
   const setMessagesWithPersistence: React.Dispatch<React.SetStateAction<Message[]>> = (action) => {
-      const newMessages = typeof action === 'function' ? action(messages) : action;
+    const newMessages = typeof action === 'function' ? (action as (prevState: Message[]) => Message[])(messages) : action;
       updateStateAndPersist(calendarData, newMessages, userProfile);
   };
 
