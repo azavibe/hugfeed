@@ -10,8 +10,7 @@
  */
 
 import {ai} from '@/ai/genkit';
-import {z} from 'genkit';
-import {generate, part} from 'genkit';
+import {z, part, generate} from 'genkit';
 
 // Define a tool for adding tasks to the user's calendar
 const addTaskTool = ai.defineTool(
@@ -71,7 +70,8 @@ const aiCoachCalendarIntegrationFlow = ai.defineFlow(
     // Construct the initial prompt with system instructions and user data.
     const promptMessage = {
         role: 'user' as const,
-        content: [part.text(`You are an AI emotional wellness coach in an app called Hugfeed. The user's name is ${input.userName}. Their preferred wellness activities are: ${activities}.
+        content: [
+            part.text(`You are an AI emotional wellness coach in an app called Hugfeed. The user's name is ${input.userName}. Their preferred wellness activities are: ${activities}.
 
 Your primary jobs are:
 1.  **Be a conversational wellness partner**: If the user is just chatting, asking for advice, or sharing feelings, respond in a friendly, supportive, and insightful manner. Use their calendar data to provide context-aware guidance. You can suggest tasks they can add manually.
@@ -86,7 +86,8 @@ ${input.calendarData}
 
 User Query:
 "${input.query}"
-`)]
+`)
+        ]
     };
 
     if (input.imageUri) {
