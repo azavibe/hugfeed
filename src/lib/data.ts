@@ -1,13 +1,11 @@
-import { User, JournalEntry, Task, Mood, CalendarDay } from './types';
+import { JournalEntry, Task, Mood, CalendarDay, UserProfile } from './types';
 import { PlaceHolderImages } from './placeholder-images';
 import { subDays, startOfDay } from 'date-fns';
 
 const userAvatar = PlaceHolderImages.find((img) => img.id === 'avatar-1');
 
-export const mockUser: User = {
+export const mockUserProfile: UserProfile = {
   name: 'Alex Doe',
-  email: 'alex.doe@example.com',
-  avatarUrl: userAvatar?.imageUrl || 'https://picsum.photos/seed/avatar1/100/100',
 };
 
 export const mockJournalEntries: JournalEntry[] = [

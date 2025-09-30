@@ -9,15 +9,16 @@ import { ScrollArea } from '../ui/scroll-area';
 import { Avatar, AvatarFallback, AvatarImage } from '../ui/avatar';
 import { cn } from '@/lib/utils';
 import { Message } from '@/lib/types';
-import { mockUser } from '@/lib/data';
 import { Logo } from '../icons';
 import { useToast } from '@/hooks/use-toast';
 import { aiCoachCalendarIntegration } from '@/ai/flows/ai-coach-calendar-flow';
 import { useAppContext } from '@/context/app-context';
 import { format } from 'date-fns';
+import { useUser } from '@/firebase/auth/use-user';
 
 export default function ChatClient() {
-    const { messages, setMessages, addTask } = useAppContext();
+    const { messages, setMessages, addTask, calendarData, userProfile } = useAppContext();
+    const { user } = useUser();
     const [input, setInput] = useState('');
     const [isLoading, setIsLoading] = useState(false);
     const scrollAreaRef = useRef<HTMLDivElement>(null);
@@ -68,9 +69,16 @@ export default function ChatClient() {
         setIsLoading(true);
 
         try {
+            // Abridged calendar data for the prompt
+            const calendarSummary = calendarData.slice(0, 7).map(d => ({
+                date: format(d.date, 'PPP'),
+                mood: d.mood,
+                journal: d.journalEntry?.title
+            }));
+
             const result = await aiCoachCalendarIntegration({
-                userId: 'mock-user-id',
-                calendarData: "User had a productive day yesterday but felt overwhelmed three days ago.",
+                userId: user?.uid || 'guest-user',
+                calendarData: JSON.stringify(calendarSummary),
                 query: input,
             });
 
@@ -98,7 +106,6 @@ export default function ChatClient() {
     
     const handleSuggestionClick = (taskContent: string) => {
         const newTask = {
-            id: `task-${Date.now()}`,
             content: taskContent,
             completed: false,
         };
@@ -129,9 +136,9 @@ export default function ChatClient() {
                                     <div className="mt-4 space-y-2">
                                         <p className="text-xs font-semibold">Here are some suggestions for you:</p>
                                         {message.suggestions.map((task, index) => (
-                                            <Button key={index} variant="secondary" size="sm" className="w-full justify-start" onClick={() => handleSuggestionClick(task)}>
-                                                <PlusCircle className="w-4 h-4 mr-2"/>
-                                                {task}
+                                            <Button key={index} variant="secondary" size="sm" className="w-full justify-start text-left h-auto py-2" onClick={() => handleSuggestionClick(task)}>
+                                                <PlusCircle className="w-4 h-4 mr-2 mt-0.5 self-start shrink-0"/>
+                                                <span>{task}</span>
                                             </Button>
                                         ))}
                                     </div>
@@ -139,8 +146,8 @@ export default function ChatClient() {
                             </div>
                             {message.role === 'user' && (
                                 <Avatar className="w-8 h-8">
-                                    <AvatarImage src={mockUser.avatarUrl} />
-                                    <AvatarFallback>{mockUser.name.charAt(0)}</AvatarFallback>
+                                    <AvatarImage src={user?.photoURL || undefined} />
+                                    <AvatarFallback>{userProfile?.name?.charAt(0) || user?.email?.charAt(0) || 'U'}</AvatarFallback>
                                 </Avatar>
                             )}
                         </div>

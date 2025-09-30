@@ -2,7 +2,7 @@
 'use client';
 
 import React, { createContext, useContext, useState, ReactNode, useEffect } from 'react';
-import { CalendarDay, JournalEntry, Message, Task, Mood } from '@/lib/types';
+import { CalendarDay, JournalEntry, Message, Task, Mood, UserProfile } from '@/lib/types';
 import { generateMockCalendarData } from '@/lib/data';
 import { isSameDay, startOfDay } from 'date-fns';
 import { useUser } from '@/firebase/auth/use-user';
@@ -17,13 +17,19 @@ const initialMessages: Message[] = [
     }
 ];
 
+const initialUserProfile: UserProfile = {
+    name: 'Wellness Seeker'
+}
+
 interface AppContextType {
   calendarData: CalendarDay[];
   messages: Message[];
+  userProfile: UserProfile | null;
   setMessages: React.Dispatch<React.SetStateAction<Message[]>>;
   addJournalEntry: (entry: Omit<JournalEntry, 'id'>) => void;
   updateTaskCompletion: (taskId: string, completed: boolean) => void;
   addTask: (task: Omit<Task, 'id'>, date: Date) => void;
+  updateUserProfile: (profile: UserProfile) => void;
   isDataLoading: boolean;
 }
 
@@ -31,21 +37,21 @@ const AppContext = createContext<AppContextType | undefined>(undefined);
 
 export const AppStateProvider = ({ children }: { children: ReactNode }) => {
   const { user } = useUser();
-  const db = useFirestore(); // Use the initialized firestore instance from context
+  const db = useFirestore();
   const [calendarData, setCalendarData] = useState<CalendarDay[]>([]);
   const [messages, setMessages] = useState<Message[]>(initialMessages);
+  const [userProfile, setUserProfile] = useState<UserProfile | null>(null);
   const [isDataLoading, setIsDataLoading] = useState(true);
   const [isInitialLoad, setIsInitialLoad] = useState(true);
 
   // Firestore utility functions
   const getUserData = async (userId: string) => {
-      if (!db) return { calendarData: null, messages: null };
+      if (!db) return { calendarData: null, messages: null, userProfile: null };
       const userDocRef = doc(db, 'users', userId);
       try {
         const docSnap = await getDoc(userDocRef);
         if (docSnap.exists()) {
             const data = docSnap.data();
-            // Dates need to be re-hydrated from Firestore Timestamps or strings
             const calendarData = data.calendarData?.map((day: any) => ({
                 ...day,
                 date: day.date.toDate(),
@@ -53,19 +59,19 @@ export const AppStateProvider = ({ children }: { children: ReactNode }) => {
                 mood: day.mood || null,
             })) || [];
             const messages = data.messages || initialMessages;
-            return { calendarData, messages };
+            const userProfile = data.userProfile || initialUserProfile;
+            return { calendarData, messages, userProfile };
         }
       } catch (error) {
         console.error("Error getting user data from Firestore:", error);
       }
-      return { calendarData: null, messages: null };
+      return { calendarData: null, messages: null, userProfile: null };
   };
 
-  const setUserData = async (userId: string, data: { calendarData: CalendarDay[], messages: Message[] }) => {
+  const setUserData = async (userId: string, data: { calendarData: CalendarDay[], messages: Message[], userProfile: UserProfile | null }) => {
       if (!db) return;
       const userDocRef = doc(db, 'users', userId);
       try {
-        // Sanitize data before sending to Firestore
         const sanitizedCalendarData = data.calendarData.map(day => ({
             ...day,
             mood: day.mood || null,
@@ -73,12 +79,18 @@ export const AppStateProvider = ({ children }: { children: ReactNode }) => {
         }));
         
         const sanitizedMessages = data.messages.map(message => ({
-            ...message,
+            id: message.id,
+            role: message.role,
+            content: message.content,
             image: message.image || null,
             suggestions: message.suggestions || null,
         }));
 
-        await setDoc(userDocRef, { calendarData: sanitizedCalendarData, messages: sanitizedMessages }, { merge: true });
+        await setDoc(userDocRef, { 
+            calendarData: sanitizedCalendarData, 
+            messages: sanitizedMessages,
+            userProfile: data.userProfile,
+        }, { merge: true });
       } catch(error) {
         console.error("Error setting user data in Firestore:", error);
       }
@@ -90,36 +102,34 @@ export const AppStateProvider = ({ children }: { children: ReactNode }) => {
     const loadData = async () => {
         setIsDataLoading(true);
         if (user && db) {
-            // Logged-in user: fetch from Firestore
-            const { calendarData: firestoreCalendar, messages: firestoreMessages } = await getUserData(user.uid);
+            const { calendarData: firestoreCalendar, messages: firestoreMessages, userProfile: firestoreProfile } = await getUserData(user.uid);
             setCalendarData(firestoreCalendar || generateMockCalendarData());
             setMessages(firestoreMessages || initialMessages);
+            setUserProfile(firestoreProfile || { ...initialUserProfile, name: user.displayName || 'Wellness Seeker' });
         } else if (!user) {
-            // Guest user: fetch from localStorage
+            // Guest user logic remains the same (localStorage)
             try {
                 const storedCalendarData = localStorage.getItem('calendarData');
                 const storedMessages = localStorage.getItem('chatMessages');
+                const storedProfile = localStorage.getItem('userProfile');
                 
                 if (storedCalendarData) {
-                    const parsedData = JSON.parse(storedCalendarData).map((day: any) => ({
-                        ...day,
-                        date: new Date(day.date),
-                        journalEntry: day.journalEntry ? { ...day.journalEntry, date: new Date(day.journalEntry.date) } : undefined,
-                    }));
-                    setCalendarData(parsedData);
+                    setCalendarData(JSON.parse(storedCalendarData).map((day: any) => ({ ...day, date: new Date(day.date) })));
                 } else {
                     setCalendarData(generateMockCalendarData());
                 }
                 
-                if (storedMessages) {
-                    setMessages(JSON.parse(storedMessages));
-                } else {
-                    setMessages(initialMessages);
-                }
+                if (storedMessages) setMessages(JSON.parse(storedMessages));
+                else setMessages(initialMessages);
+
+                if(storedProfile) setUserProfile(JSON.parse(storedProfile));
+                else setUserProfile(initialUserProfile);
+
             } catch (error) {
                 console.error("Failed to load guest data from localStorage", error);
                 setCalendarData(generateMockCalendarData());
                 setMessages(initialMessages);
+                setUserProfile(initialUserProfile);
             }
         }
         setIsDataLoading(false);
@@ -134,47 +144,40 @@ export const AppStateProvider = ({ children }: { children: ReactNode }) => {
     
     const saveData = async () => {
         if (user) {
-            // Logged-in user: save to Firestore
-            await setUserData(user.uid, { calendarData, messages });
+            await setUserData(user.uid, { calendarData, messages, userProfile });
         } else {
-            // Guest user: save to localStorage
             try {
                 localStorage.setItem('calendarData', JSON.stringify(calendarData));
                 localStorage.setItem('chatMessages', JSON.stringify(messages));
+                localStorage.setItem('userProfile', JSON.stringify(userProfile));
             } catch (error) {
                 console.error("Failed to save guest data to localStorage", error);
             }
         }
     };
 
-    // Debounce saving to avoid too many writes
-    const handler = setTimeout(() => {
-        saveData();
-    }, 1000);
+    const handler = setTimeout(saveData, 1000);
+    return () => clearTimeout(handler);
 
-    return () => {
-        clearTimeout(handler);
-    };
-
-  }, [calendarData, messages, user, isInitialLoad, isDataLoading]);
+  }, [calendarData, messages, userProfile, user, isInitialLoad, isDataLoading]);
 
   const addJournalEntry = (entry: Omit<JournalEntry, 'id' | 'date'> & { date: Date, mood: Mood }) => {
     setCalendarData(prevData => {
       const dayIndex = prevData.findIndex(day => isSameDay(day.date, entry.date));
-      if (dayIndex === -1) return prevData;
+      const newEntry: JournalEntry = { id: `journal-${Date.now()}`, ...entry };
+      
+      if (dayIndex === -1) {
+         const newDay: CalendarDay = {
+            date: startOfDay(entry.date),
+            tasks: [],
+            journalEntry: newEntry,
+            mood: entry.mood,
+         };
+         return [...prevData, newDay].sort((a,b) => b.date.getTime() - a.date.getTime());
+      }
 
       const newData = [...prevData];
-      const newEntry: JournalEntry = {
-        id: `journal-${Date.now()}`,
-        ...entry,
-      };
-      
-      newData[dayIndex] = {
-        ...newData[dayIndex],
-        journalEntry: newEntry,
-        mood: entry.mood,
-      };
-      
+      newData[dayIndex] = { ...newData[dayIndex], journalEntry: newEntry, mood: entry.mood };
       return newData;
     });
   };
@@ -197,18 +200,13 @@ export const AppStateProvider = ({ children }: { children: ReactNode }) => {
     setCalendarData(prevData => {
         const targetDate = startOfDay(date);
         const dayIndex = prevData.findIndex(day => isSameDay(day.date, targetDate));
-        
-        const newTask: Task = {
-            id: `task-${Date.now()}`,
-            ...task,
-        };
+        const newTask: Task = { id: `task-${Date.now()}`, ...task };
 
         if (dayIndex !== -1) {
             const newData = [...prevData];
             newData[dayIndex].tasks.push(newTask);
             return newData;
         } else {
-            // If no data for this day exists, create it
             const newDay: CalendarDay = {
                 date: targetDate,
                 tasks: [newTask],
@@ -220,8 +218,12 @@ export const AppStateProvider = ({ children }: { children: ReactNode }) => {
     });
   };
 
+  const updateUserProfile = (profile: UserProfile) => {
+    setUserProfile(profile);
+  };
+
   return (
-    <AppContext.Provider value={{ calendarData, messages, setMessages, addJournalEntry, updateTaskCompletion, addTask, isDataLoading }}>
+    <AppContext.Provider value={{ calendarData, messages, userProfile, setMessages, addJournalEntry, updateTaskCompletion, addTask, updateUserProfile, isDataLoading }}>
       {children}
     </AppContext.Provider>
   );

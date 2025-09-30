@@ -2,9 +2,8 @@
 
 import { BarChart, FileText } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { generateMockCalendarData } from '@/lib/data';
 import { MoodEmojis } from '@/lib/types';
-
+import { useAppContext } from '@/context/app-context';
 import {
   ChartContainer,
   ChartTooltip,
@@ -13,14 +12,7 @@ import {
 } from '@/components/ui/chart';
 import { Bar, XAxis, YAxis, CartesianGrid, BarChart as RechartsBarChart, Cell } from 'recharts';
 import { format } from 'date-fns';
-
-const chartData = generateMockCalendarData()
-  .filter(d => d.mood)
-  .map(d => ({
-    date: format(d.date, 'MMM d'),
-    mood: d.mood,
-    value: Object.keys(MoodEmojis).indexOf(d.mood!) + 1,
-  })).reverse();
+import { Skeleton } from '@/components/ui/skeleton';
 
 const chartConfig = {
   mood: {
@@ -34,6 +26,23 @@ const chartConfig = {
 } satisfies ChartConfig;
 
 export default function InsightsPage() {
+  const { calendarData, isDataLoading } = useAppContext();
+
+  const chartData = calendarData
+    .filter(d => d.mood)
+    .map(d => ({
+      date: format(d.date, 'MMM d'),
+      mood: d.mood,
+      value: Object.keys(MoodEmojis).indexOf(d.mood!) + 1,
+    }))
+    .slice(0, 30) // Limit to last 30 entries for performance
+    .reverse();
+
+  const journalEntries = calendarData
+    .filter(d => d.journalEntry)
+    .sort((a,b) => b.date.getTime() - a.date.getTime())
+    .slice(0, 10); // Limit to last 10 entries
+
   return (
     <div className="space-y-8">
       <div>
@@ -53,34 +62,42 @@ export default function InsightsPage() {
           </CardTitle>
         </CardHeader>
         <CardContent>
-          <ChartContainer config={chartConfig} className="min-h-[200px] w-full">
-            <RechartsBarChart accessibilityLayer data={chartData}>
-              <CartesianGrid vertical={false} />
-              <XAxis
-                dataKey="date"
-                tickLine={false}
-                tickMargin={10}
-                axisLine={false}
-              />
-              <YAxis hide={true} />
-              <ChartTooltip
-                cursor={false}
-                content={<ChartTooltipContent 
-                    formatter={(value, name, props) => (
-                        <div className="flex items-center gap-2">
-                            <div className="w-3 h-3 rounded-full" style={{backgroundColor: chartConfig[props.payload.mood as keyof typeof chartConfig]?.color}}></div>
-                            <span>{MoodEmojis[props.payload.mood as keyof typeof MoodEmojis]} {chartConfig[props.payload.mood as keyof typeof chartConfig]?.label}</span>
-                        </div>
-                    )}
-                />}
-              />
-              <Bar dataKey="value" radius={4}>
-                  {chartData.map((entry) => (
-                      <Cell key={entry.date} fill={chartConfig[entry.mood as keyof typeof chartConfig]?.color} />
-                  ))}
-              </Bar>
-            </RechartsBarChart>
-          </ChartContainer>
+          {isDataLoading ? (
+            <Skeleton className="h-[250px] w-full" />
+          ) : chartData.length > 0 ? (
+            <ChartContainer config={chartConfig} className="min-h-[250px] w-full">
+              <RechartsBarChart accessibilityLayer data={chartData}>
+                <CartesianGrid vertical={false} />
+                <XAxis
+                  dataKey="date"
+                  tickLine={false}
+                  tickMargin={10}
+                  axisLine={false}
+                />
+                <YAxis hide={true} />
+                <ChartTooltip
+                  cursor={false}
+                  content={<ChartTooltipContent 
+                      formatter={(value, name, props) => (
+                          <div className="flex items-center gap-2">
+                              <div className="w-3 h-3 rounded-full" style={{backgroundColor: chartConfig[props.payload.mood as keyof typeof chartConfig]?.color}}></div>
+                              <span>{MoodEmojis[props.payload.mood as keyof typeof MoodEmojis]} {chartConfig[props.payload.mood as keyof typeof chartConfig]?.label}</span>
+                          </div>
+                      )}
+                  />}
+                />
+                <Bar dataKey="value" radius={4}>
+                    {chartData.map((entry) => (
+                        <Cell key={entry.date} fill={chartConfig[entry.mood as keyof typeof chartConfig]?.color} />
+                    ))}
+                </Bar>
+              </RechartsBarChart>
+            </ChartContainer>
+          ) : (
+             <div className="h-[250px] flex items-center justify-center text-muted-foreground">
+                <p>Not enough mood data to display chart. Start logging your mood!</p>
+            </div>
+          )}
         </CardContent>
       </Card>
 
@@ -92,14 +109,26 @@ export default function InsightsPage() {
           </CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="space-y-4">
-            {generateMockCalendarData().filter(d => d.journalEntry).map(day => (
-              <div key={day.journalEntry!.id} className="p-4 border rounded-lg">
-                <p className="font-bold">{day.journalEntry!.title} - <span className="text-sm text-muted-foreground">{format(day.journalEntry!.date, "PPP")}</span></p>
-                <p className="mt-2 text-muted-foreground">{day.journalEntry!.content}</p>
-              </div>
-            ))}
-          </div>
+          {isDataLoading ? (
+            <div className="space-y-4">
+              <Skeleton className="h-24 w-full" />
+              <Skeleton className="h-24 w-full" />
+              <Skeleton className="h-24 w-full" />
+            </div>
+          ) : journalEntries.length > 0 ? (
+            <div className="space-y-4">
+              {journalEntries.map(day => (
+                <div key={day.journalEntry!.id} className="p-4 border rounded-lg">
+                  <p className="font-bold">{day.journalEntry!.title} - <span className="text-sm text-muted-foreground">{format(day.journalEntry!.date, "PPP")}</span></p>
+                  <p className="mt-2 text-muted-foreground">{day.journalEntry!.content}</p>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <div className="h-[250px] flex items-center justify-center text-muted-foreground">
+                <p>No journal entries yet. Write your first one from the Calendar tab.</p>
+            </div>
+          )}
         </CardContent>
       </Card>
     </div>

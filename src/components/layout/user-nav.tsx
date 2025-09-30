@@ -17,10 +17,12 @@ import { useAuth } from '@/firebase';
 import { useUser } from '@/firebase/auth/use-user';
 import { signOut } from 'firebase/auth';
 import { useRouter } from 'next/navigation';
+import { useAppContext } from '@/context/app-context';
 
 
 export function UserNav() {
-  const { user, loading } = useUser();
+  const { user, loading: userLoading } = useUser();
+  const { userProfile, isDataLoading } = useAppContext();
   const auth = useAuth();
   const router = useRouter();
   
@@ -31,7 +33,9 @@ export function UserNav() {
     }
   };
 
-  if (loading) {
+  const isLoading = userLoading || isDataLoading;
+
+  if (isLoading) {
     return <div className="h-12 w-full animate-pulse bg-muted rounded-md"></div>;
   }
   
@@ -55,19 +59,19 @@ export function UserNav() {
         >
           <Avatar className="h-8 w-8">
             <AvatarImage src={user.photoURL || ''} alt={user.displayName || ''} />
-            <AvatarFallback>{user.displayName?.charAt(0) || user.email?.charAt(0)}</AvatarFallback>
+            <AvatarFallback>{userProfile?.name?.charAt(0) || user.email?.charAt(0)}</AvatarFallback>
           </Avatar>
           <div className="text-left">
-            <p className="text-sm font-medium">{user.displayName || 'User'}</p>
-            <p className="text-xs text-muted-foreground">{user.email}</p>
+            <p className="text-sm font-medium truncate">{userProfile?.name || 'User'}</p>
+            <p className="text-xs text-muted-foreground truncate">{user.email}</p>
           </div>
         </Button>
       </DropdownMenuTrigger>
       <DropdownMenuContent className="w-56" align="end" forceMount>
         <DropdownMenuLabel className="font-normal">
           <div className="flex flex-col space-y-1">
-            <p className="text-sm font-medium leading-none">{user.displayName || 'User'}</p>
-            <p className="text-xs leading-none text-muted-foreground">
+            <p className="text-sm font-medium leading-none truncate">{userProfile?.name || 'User'}</p>
+            <p className="text-xs leading-none text-muted-foreground truncate">
               {user.email}
             </p>
           </div>

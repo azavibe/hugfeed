@@ -1,13 +1,43 @@
+'use client';
+
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { mockUser } from "@/lib/data";
 import { Gem, User, Shield } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
+import { useUser } from "@/firebase/auth/use-user";
+import { useAppContext } from "@/context/app-context";
+import { useState, useEffect } from "react";
+import { Skeleton } from "@/components/ui/skeleton";
+import { useToast } from "@/hooks/use-toast";
+
 
 export default function ProfilePage() {
+    const { user, loading: userLoading } = useUser();
+    const { userProfile, updateUserProfile, isDataLoading } = useAppContext();
+    const [name, setName] = useState('');
+    const { toast } = useToast();
+
+    useEffect(() => {
+        if (userProfile) {
+            setName(userProfile.name);
+        }
+    }, [userProfile]);
+
+    const handleSaveChanges = () => {
+        if (userProfile) {
+            updateUserProfile({ ...userProfile, name });
+            toast({
+                title: "Profile Updated",
+                description: "Your changes have been saved successfully.",
+            });
+        }
+    }
+
+    const isLoading = userLoading || isDataLoading;
+
     return (
         <div className="space-y-8">
             <div>
@@ -27,19 +57,34 @@ export default function ProfilePage() {
                             <CardDescription>Update your personal details here.</CardDescription>
                         </CardHeader>
                         <CardContent className="space-y-4">
-                            <div className="flex items-center gap-4">
-                                <Image src={mockUser.avatarUrl} alt="User avatar" width={80} height={80} className="rounded-full" />
-                                <Button variant="outline">Change Photo</Button>
-                            </div>
+                             {isLoading ? (
+                                <div className="flex items-center gap-4">
+                                    <Skeleton className="h-20 w-20 rounded-full" />
+                                    <Skeleton className="h-10 w-28" />
+                                </div>
+                            ) : (
+                                <div className="flex items-center gap-4">
+                                     <Image src={user?.photoURL || 'https://picsum.photos/seed/avatar-placeholder/80/80'} alt="User avatar" width={80} height={80} className="rounded-full" />
+                                     <Button variant="outline">Change Photo</Button>
+                                </div>
+                            )}
                             <div className="grid gap-2">
                                 <Label htmlFor="name">Name</Label>
-                                <Input id="name" defaultValue={mockUser.name} />
+                                {isLoading ? (
+                                    <Skeleton className="h-10 w-full" />
+                                ) : (
+                                    <Input id="name" value={name} onChange={(e) => setName(e.target.value)} />
+                                )}
                             </div>
                             <div className="grid gap-2">
                                 <Label htmlFor="email">Email</Label>
-                                <Input id="email" type="email" defaultValue={mockUser.email} />
+                                {isLoading ? (
+                                     <Skeleton className="h-10 w-full" />
+                                ) : (
+                                    <Input id="email" type="email" defaultValue={user?.email || ''} disabled />
+                                )}
                             </div>
-                            <Button>Save Changes</Button>
+                            <Button onClick={handleSaveChanges} disabled={isLoading}>Save Changes</Button>
                         </CardContent>
                     </Card>
 

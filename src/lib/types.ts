@@ -1,7 +1,5 @@
-export type User = {
+export type UserProfile = {
   name: string;
-  email: string;
-  avatarUrl: string;
   pronouns?: string;
   goals?: string[];
 };
