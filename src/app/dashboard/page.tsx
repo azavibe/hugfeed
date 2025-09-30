@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState } from 'react';
@@ -12,8 +11,7 @@ import {
 } from "@/components/ui/carousel"
 import { Button } from '@/components/ui/button';
 import { ActivityFeed } from '@/components/dashboard/activity-feed';
-import { Mic } from 'lucide-react';
-import { Input } from '@/components/ui/input';
+import { DashboardChat } from '@/components/dashboard/dashboard-chat';
 
 const DayPicker = ({ selectedDate, onDateChange }: { selectedDate: Date; onDateChange: (date: Date) => void; }) => {
   const days = eachDayOfInterval({
@@ -56,12 +54,9 @@ export default function DashboardPage() {
     const [selectedDate, setSelectedDate] = useState(new Date());
 
     return (
-        <div className="flex flex-col gap-6">
+        <div className="flex flex-col gap-6 max-w-2xl mx-auto">
              <DayPicker selectedDate={selectedDate} onDateChange={setSelectedDate} />
-             <div className="relative">
-                <Mic className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
-                <Input placeholder="Ask, plan, or message..." className="pl-10 pr-4 py-6 text-lg" />
-            </div>
+             <DashboardChat selectedDate={selectedDate}/>
             <ActivityFeed selectedDate={selectedDate} />
         </div>
     );
