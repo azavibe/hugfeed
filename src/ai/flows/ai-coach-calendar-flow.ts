@@ -1,3 +1,4 @@
+
 'use server';
 
 /**
@@ -116,7 +117,7 @@ User Query:
                 generatedTasks = call.input.tasks;
                 // Create a response to send back to the model, confirming the tool "ran".
                 toolResponses.push({
-                    type: 'toolResponse',
+                    tool: 'toolResponse',
                     ref: call.ref,
                     data: { output: { success: true } },
                 });
