@@ -25,7 +25,7 @@ import {
 import { UserNav } from './user-nav';
 
 const navItems = [
-  { href: '/dashboard', icon: Calendar, label: 'Calendar' },
+  { href: '/dashboard', icon: Calendar, label: 'Dashboard' },
   { href: '/dashboard/coach', icon: Bot, label: 'AI Coach' },
   { href: '/dashboard/insights', icon: BarChart2, label: 'Insights' },
   { href: '/dashboard/profile', icon: User, label: 'Profile' },
@@ -35,14 +35,12 @@ export default function AppSidebar() {
   const pathname = usePathname();
 
   return (
-    <Sidebar>
-      <SidebarHeader className="flex items-center justify-between">
-        <div className="flex items-center gap-2">
-            <Link href="/dashboard" className="flex items-center gap-2">
-              <Logo className="w-8 h-8 text-primary" />
-              <span className="font-headline text-lg">Hugfeed</span>
-            </Link>
-        </div>
+    <Sidebar collapsible="icon">
+      <SidebarHeader>
+        <Link href="/dashboard" className="flex items-center gap-2">
+          <Logo className="w-8 h-8 text-primary" />
+          <span className="font-headline text-lg">Hugfeed</span>
+        </Link>
       </SidebarHeader>
       <SidebarContent className="p-2">
         <SidebarMenu>
