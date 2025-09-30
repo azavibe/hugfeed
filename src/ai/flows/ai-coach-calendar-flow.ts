@@ -10,7 +10,7 @@
  */
 
 import {ai} from '@/ai/genkit';
-import {z, generate} from 'genkit';
+import {z} from 'genkit';
 
 // Define a tool for adding tasks to the user's calendar
 const addTaskTool = ai.defineTool(
@@ -99,7 +99,7 @@ User Query:
     }
 
     // First, send the prompt to the model to get its initial response, which may include tool calls.
-    const llmResponse = await generate({
+    const llmResponse = await ai.generate({
       model: 'googleai/gemini-2.5-flash',
       tools: [addTaskTool],
       prompt: [promptMessage],
@@ -127,7 +127,7 @@ User Query:
         
         // If there were tool calls, we must send the tool responses back to the model
         // to get its final conversational text response.
-        const finalResponse = await generate({
+        const finalResponse = await ai.generate({
             model: 'googleai/gemini-2.5-flash',
             prompt: [promptMessage, llmResponse.message, ...toolResponses],
         });
