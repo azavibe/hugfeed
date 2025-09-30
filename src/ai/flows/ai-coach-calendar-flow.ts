@@ -34,7 +34,7 @@ const addTaskTool = ai.defineTool(
 const AICoachCalendarIntegrationInputSchema = z.object({
   userId: z.string().describe('The ID of the user.'),
   userName: z.string().describe("The user's name."),
-  preferredActivities: z.array(z.string()).describe("A list of the user's preferred wellness activities."),
+  preferredActivities: z.array(z.string()).optional().describe("A list of the user's preferred wellness activities."),
   calendarData: z.string().describe('The calendar data of the user including mood, journal entries, and tasks.'),
   query: z.string().describe('The user query or request to the AI coach.'),
   imageUri: z
@@ -66,10 +66,12 @@ const aiCoachCalendarIntegrationFlow = ai.defineFlow(
   },
   async (input) => {
     
+    const activities = Array.isArray(input.preferredActivities) ? input.preferredActivities.join(', ') : 'not specified';
+
     // Construct the initial prompt with system instructions and user data.
     const promptMessage = {
         role: 'user' as const,
-        content: [part.text(`You are an AI emotional wellness coach in an app called Hugfeed. The user's name is ${input.userName}. Their preferred wellness activities are: ${input.preferredActivities.join(', ') || 'not specified'}.
+        content: [part.text(`You are an AI emotional wellness coach in an app called Hugfeed. The user's name is ${input.userName}. Their preferred wellness activities are: ${activities}.
 
 Your primary jobs are:
 1.  **Be a conversational wellness partner**: If the user is just chatting, asking for advice, or sharing feelings, respond in a friendly, supportive, and insightful manner. Use their calendar data to provide context-aware guidance. You can suggest tasks they can add manually.
