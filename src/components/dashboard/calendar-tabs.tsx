@@ -12,6 +12,8 @@ import { Checkbox } from '../ui/checkbox';
 import { Calendar } from '../ui/calendar';
 import { useAppContext } from '@/context/app-context';
 import { JournalEntryDialog } from './journal-entry-dialog';
+import { Skeleton } from '../ui/skeleton';
+import { cn } from '@/lib/utils';
 
 const WeeklyDatePicker = ({
   selectedDate,
@@ -134,8 +136,17 @@ const DayDetails = ({ selectedDate }: { selectedDate: Date }) => {
 }
 
 export default function CalendarTabs() {
-  const { calendarData } = useAppContext();
+  const { calendarData, isDataLoading } = useAppContext();
   const [selectedDate, setSelectedDate] = useState(new Date());
+
+  if (isDataLoading) {
+      return (
+          <div className="space-y-4">
+              <Skeleton className="h-10 w-full max-w-md" />
+              <Skeleton className="h-96 w-full" />
+          </div>
+      )
+  }
 
   return (
     <Tabs defaultValue="day">
@@ -185,11 +196,11 @@ export default function CalendarTabs() {
                         <button
                           type="button"
                           {...props}
-                          className={cn(
-                            "h-9 w-9 p-0 font-normal relative",
-                            "focus-within:relative focus-within:z-20",
-                            isSelected ? "text-primary-foreground" : "",
-                            !isSelected && date < new Date() && !dayData?.mood ? "text-muted-foreground opacity-50" : "",
+                           className={cn(
+                            'h-9 w-9 p-0 font-normal relative',
+                            'focus-within:relative focus-within:z-20',
+                            isSelected ? 'text-primary-foreground' : '',
+                            !isSelected && date < new Date() && !dayData?.mood ? 'text-muted-foreground opacity-50' : '',
                             props.className
                           )}
                         >
