@@ -1,14 +1,17 @@
+
 'use client';
 
 import { useState } from 'react';
 import { addDays, format, isSameDay, startOfWeek, subWeeks, addWeeks, eachDayOfInterval } from 'date-fns';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Calendar as CalendarIcon, ChevronLeft, ChevronRight, PlusCircle } from 'lucide-react';
+import { ChevronLeft, ChevronRight, PlusCircle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { CalendarDay, MoodEmojis, Task } from '@/lib/types';
+import { MoodEmojis, Task } from '@/lib/types';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Checkbox } from '../ui/checkbox';
 import { Calendar } from '../ui/calendar';
+import { useAppContext } from '@/context/app-context';
+import { JournalEntryDialog } from './journal-entry-dialog';
 
 const WeeklyDatePicker = ({
   selectedDate,
@@ -50,13 +53,23 @@ const WeeklyDatePicker = ({
 };
 
 
-const DayDetails = ({ dayData }: { dayData: CalendarDay | undefined }) => {
+const DayDetails = ({ selectedDate }: { selectedDate: Date }) => {
+    const { calendarData, updateTaskCompletion, addJournalEntry } = useAppContext();
+    const dayData = calendarData.find(d => isSameDay(d.date, selectedDate));
+    const [isDialogOpen, setIsDialogOpen] = useState(false);
+
     if (!dayData) {
         return <div className="text-center text-muted-foreground py-16">No data for this day.</div>
     }
 
     return (
         <div className="grid md:grid-cols-2 gap-6 mt-6">
+            <JournalEntryDialog 
+                isOpen={isDialogOpen}
+                onOpenChange={setIsDialogOpen}
+                onSave={addJournalEntry}
+                selectedDate={selectedDate}
+            />
             <Card>
                 <CardHeader>
                     <CardTitle className="flex items-center justify-between">
@@ -74,7 +87,7 @@ const DayDetails = ({ dayData }: { dayData: CalendarDay | undefined }) => {
                     ) : (
                         <div className="text-center py-8 text-muted-foreground">
                             <p>No journal entry for today.</p>
-                            <Button variant="ghost" className="mt-2"><PlusCircle className="mr-2 h-4 w-4"/> Add Entry</Button>
+                            <Button variant="ghost" className="mt-2" onClick={() => setIsDialogOpen(true)}><PlusCircle className="mr-2 h-4 w-4"/> Add Entry</Button>
                         </div>
                     )}
                 </CardContent>
@@ -89,7 +102,11 @@ const DayDetails = ({ dayData }: { dayData: CalendarDay | undefined }) => {
                         <div className="space-y-4">
                             {dayData.tasks.map((task: Task) => (
                                 <div key={task.id} className="flex items-center space-x-3">
-                                    <Checkbox id={task.id} checked={task.completed} />
+                                    <Checkbox 
+                                        id={task.id} 
+                                        checked={task.completed} 
+                                        onCheckedChange={(checked) => updateTaskCompletion(task.id, !!checked)}
+                                    />
                                     <label
                                         htmlFor={task.id}
                                         className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
@@ -102,7 +119,12 @@ const DayDetails = ({ dayData }: { dayData: CalendarDay | undefined }) => {
                     ) : (
                         <div className="text-center py-8 text-muted-foreground">
                             <p>No tasks for today.</p>
-                            <Button variant="ghost" className="mt-2"><PlusCircle className="mr-2 h-4 w-4"/> Add Task</Button>
+                             <Button variant="ghost" className="mt-2" onClick={() => {
+                                // In a real app, this would open a dialog to add a task.
+                                console.log("Add Task clicked");
+                             }}>
+                                <PlusCircle className="mr-2 h-4 w-4"/> Add Task
+                            </Button>
                         </div>
                     )}
                 </CardContent>
@@ -111,10 +133,9 @@ const DayDetails = ({ dayData }: { dayData: CalendarDay | undefined }) => {
     )
 }
 
-export default function CalendarTabs({ data }: { data: CalendarDay[] }) {
+export default function CalendarTabs() {
+  const { calendarData } = useAppContext();
   const [selectedDate, setSelectedDate] = useState(new Date());
-  
-  const selectedDayData = data.find(day => isSameDay(day.date, selectedDate));
 
   return (
     <Tabs defaultValue="day">
@@ -129,7 +150,7 @@ export default function CalendarTabs({ data }: { data: CalendarDay[] }) {
                 <WeeklyDatePicker selectedDate={selectedDate} onDateChange={setSelectedDate} />
             </CardHeader>
             <CardContent>
-                <DayDetails dayData={selectedDayData} />
+                <DayDetails selectedDate={selectedDate} />
             </CardContent>
         </Card>
       </TabsContent>
@@ -149,11 +170,15 @@ export default function CalendarTabs({ data }: { data: CalendarDay[] }) {
             <Calendar
                 mode="single"
                 selected={selectedDate}
-                onSelect={(date) => date && setSelectedDate(date)}
+                onSelect={(date) => {
+                    if (date) {
+                        setSelectedDate(date);
+                    }
+                }}
                 className="p-0"
                 components={{
                     Day: ({ date }) => {
-                      const dayData = data.find(d => isSameDay(d.date, date));
+                      const dayData = calendarData.find(d => isSameDay(d.date, date));
                       return (
                         <div className="relative w-full h-full flex items-center justify-center">
                           {format(date, 'd')}

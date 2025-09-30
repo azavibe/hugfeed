@@ -1,9 +1,7 @@
+
 import CalendarTabs from "@/components/dashboard/calendar-tabs";
-import { generateMockCalendarData } from "@/lib/data";
 
 export default function DashboardPage() {
-    const calendarData = generateMockCalendarData();
-
     return (
         <div className="flex flex-col gap-8">
             <div>
@@ -14,7 +12,7 @@ export default function DashboardPage() {
                     Reflect on your days, understand your patterns, and grow.
                 </p>
             </div>
-            <CalendarTabs data={calendarData} />
+            <CalendarTabs />
         </div>
     );
 }

@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useRef, useEffect, ChangeEvent } from 'react';
@@ -12,17 +13,11 @@ import { mockUser } from '@/lib/data';
 import { Logo } from '../icons';
 import { useToast } from '@/hooks/use-toast';
 import { aiCoachCalendarIntegration } from '@/ai/flows/ai-coach-calendar-flow';
-
-const initialMessages: Message[] = [
-    {
-        id: '1',
-        role: 'assistant',
-        content: "Hello! I'm your AI wellness coach. How are you feeling today? Feel free to share what's on your mind, or upload an image that represents your current state."
-    }
-]
+import { useAppContext } from '@/context/app-context';
+import { format } from 'date-fns';
 
 export default function ChatClient() {
-    const [messages, setMessages] = useState<Message[]>(initialMessages);
+    const { messages, setMessages, addTask } = useAppContext();
     const [input, setInput] = useState('');
     const [isLoading, setIsLoading] = useState(false);
     const scrollAreaRef = useRef<HTMLDivElement>(null);
@@ -101,10 +96,16 @@ export default function ChatClient() {
         }
     };
     
-    const handleSuggestionClick = (task: string) => {
+    const handleSuggestionClick = (taskContent: string) => {
+        const newTask = {
+            id: `task-${Date.now()}`,
+            content: taskContent,
+            completed: false,
+        };
+        addTask(newTask, new Date());
         toast({
             title: "Task Added!",
-            description: `"${task}" has been added to your calendar.`
+            description: `"${taskContent}" has been added to your calendar for ${format(new Date(), 'PPP')}.`
         });
     }
 
