@@ -140,8 +140,8 @@ export default function InsightsPage() {
                     />}
                   />
                   <Bar dataKey="value" radius={4}>
-                      {moodChartData.map((entry) => (
-                          <Cell key={entry.date} fill={moodChartConfig[entry.mood as keyof typeof moodChartConfig]?.color} />
+                      {moodChartData.map((entry, index) => (
+                          <Cell key={`cell-${index}`} fill={moodChartConfig[entry.mood as keyof typeof moodChartConfig]?.color} />
                       ))}
                   </Bar>
                 </RechartsBarChart>
@@ -179,7 +179,11 @@ export default function InsightsPage() {
                     cursor={false}
                     content={<ChartTooltipContent />}
                   />
-                  <Bar dataKey="tasksCompleted" fill="var(--color-tasksCompleted)" radius={4} />
+                  <Bar dataKey="tasksCompleted" fill="var(--color-tasksCompleted)" radius={4}>
+                     {weeklyCompletionData.map((entry, index) => (
+                        <Cell key={`cell-${index}`} fill={"hsl(var(--chart-1))"} />
+                    ))}
+                  </Bar>
                 </RechartsBarChart>
               </ChartContainer>
             ) : (
