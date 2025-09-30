@@ -63,7 +63,7 @@ export default function InsightsPage() {
       const completedTasks = day.tasks.filter(t => t.completed).length;
       const completionRate = totalTasks > 0 ? (completedTasks / totalTasks) * 100 : 0;
       return {
-        date: new Date(day.date).toLocaleDateString('en-US', { weekday: 'short' }),
+        date: format(day.date, 'MMM d'),
         tasksCompleted: completedTasks,
         completionRate: completionRate,
       };
