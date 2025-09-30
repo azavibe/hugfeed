@@ -9,7 +9,7 @@ import { useToast } from '@/hooks/use-toast';
 import { useAppContext } from '@/context/app-context';
 import { useUser } from '@/firebase/auth/use-user';
 import { aiCoachCalendarIntegration } from '@/ai/flows/ai-coach-calendar-flow';
-import { Avatar, AvatarFallback } from '../ui/avatar';
+import { Avatar, AvatarFallback, AvatarImage } from '../ui/avatar';
 import { Logo } from '../icons';
 import { cn } from '@/lib/utils';
 import { format } from 'date-fns';
