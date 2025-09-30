@@ -11,7 +11,6 @@
 
 import {ai} from '@/ai/genkit';
 import {z} from 'genkit';
-import { part } from '@genkit-ai/googleai';
 
 
 // Define a tool for adding tasks to the user's calendar
@@ -69,10 +68,7 @@ const aiCoachCalendarIntegrationFlow = ai.defineFlow(
     
     const activities = Array.isArray(input.preferredActivities) ? input.preferredActivities.join(', ') : 'not specified';
 
-    const promptMessage = {
-        role: 'user' as const,
-        content: [
-            part.text(`You are an AI emotional wellness coach in an app called Hugfeed. The user's name is ${input.userName}. Their preferred wellness activities are: ${activities}.
+    const promptText = `You are an AI emotional wellness coach in an app called Hugfeed. The user's name is ${input.userName}. Their preferred wellness activities are: ${activities}.
 
 Your primary jobs are:
 1.  **Be a conversational wellness partner**: If the user is just chatting, asking for advice, or sharing feelings, respond in a friendly, supportive, and insightful manner. Use their calendar data to provide context-aware guidance. You can suggest tasks they can add manually.
@@ -86,22 +82,13 @@ Calendar Data (past 7 days):
 ${input.calendarData}
 
 User Query:
-"${input.query}"`),
-            ...(input.imageUri
-              ? [
-                  part.media({ url: input.imageUri }),
-                  part.text('The user has also uploaded an image. Analyze it in relation to the calendar data and user query to provide a more insightful response.')
-                ]
-              : [])
-          ]
-    };
-
+"${input.query}"`;
 
     // First, send the prompt to the model to get its initial response, which may include tool calls.
     const llmResponse = await ai.generate({
       model: 'googleai/gemini-2.5-flash',
       tools: [addTaskTool],
-      prompt: promptMessage,
+      prompt: promptText,
     });
 
     const toolCalls = llmResponse.toolCalls();
@@ -128,7 +115,11 @@ User Query:
         // to get its final conversational text response.
         const finalResponse = await ai.generate({
             model: 'googleai/gemini-2.5-flash',
-            prompt: [promptMessage, llmResponse.message, ...toolResponses],
+            prompt: [
+              { role: 'user', content: [{ type: 'text', text: promptText }] },
+              llmResponse.message, 
+              ...toolResponses
+            ],
         });
 
         return {
