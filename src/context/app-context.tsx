@@ -59,7 +59,6 @@ const convertDatesToTimestamps = (data: { calendarData: CalendarDay[], messages:
         journalEntry: day.journalEntry ? { ...day.journalEntry, date: Timestamp.fromDate(day.journalEntry.date) } : null,
     }));
     
-    // Ensure messages have a valid structure
     const sanitizedMessages = data.messages.map(message => ({
         id: message.id,
         role: message.role,
@@ -81,7 +80,6 @@ const convertDatesToTimestamps = (data: { calendarData: CalendarDay[], messages:
         userProfile: sanitizedProfile,
     };
 };
-
 
 export const AppStateProvider = ({ children }: { children: ReactNode }) => {
   const { user } = useUser();
@@ -132,7 +130,6 @@ export const AppStateProvider = ({ children }: { children: ReactNode }) => {
                 }
             } catch (error) {
                  console.error("Error fetching user data from Firestore:", error);
-                 // Fallback to mock data on error
                  setCalendarData(generateMockCalendarData());
                  setMessages(initialMessages);
                  setUserProfile(initialUserProfile);
@@ -160,28 +157,28 @@ export const AppStateProvider = ({ children }: { children: ReactNode }) => {
   }, [user, db]);
 
   // Unified update and persist function
-  const updateStateAndPersist = (updateFn: (prevState: AppContextType) => Partial<AppContextType>) => {
-    const prevState = { calendarData, messages, userProfile, isDataLoading, setMessages, addJournalEntry, updateTaskCompletion, addTask, updateUserProfile };
+  const updateStateAndPersist = (updateFn: (prevState: { calendarData: CalendarDay[], messages: Message[], userProfile: UserProfile | null }) => { calendarData?: CalendarDay[], messages?: Message[], userProfile?: UserProfile | null }) => {
+    const prevState = { calendarData, messages, userProfile };
     const updates = updateFn(prevState);
 
     const newState = {
-      calendarData: 'calendarData' in updates ? updates.calendarData! : calendarData,
-      messages: 'messages' in updates ? updates.messages! : messages,
-      userProfile: 'userProfile' in updates ? updates.userProfile! : userProfile,
+      calendarData: updates.calendarData || prevState.calendarData,
+      messages: updates.messages || prevState.messages,
+      userProfile: 'userProfile' in updates ? updates.userProfile : prevState.userProfile,
     };
 
     // Update local state first for immediate UI feedback
-    if ('calendarData' in updates) setCalendarData(updates.calendarData!);
-    if ('messages' in updates) setMessages(updates.messages!);
-    if ('userProfile' in updates) setUserProfile(updates.userProfile!);
+    if (updates.calendarData) setCalendarData(updates.calendarData);
+    if (updates.messages) setMessages(updates.messages);
+    if ('userProfile' in updates) setUserProfile(updates.userProfile || null);
 
     // Persist to appropriate storage
     if (user) {
       saveStateToFirestore(newState);
     } else {
       // Guest user persistence
-      if ('calendarData' in updates) localStorage.setItem('calendarData', JSON.stringify(updates.calendarData));
-      if ('messages' in updates) localStorage.setItem('chatMessages', JSON.stringify(updates.messages));
+      if (updates.calendarData) localStorage.setItem('calendarData', JSON.stringify(updates.calendarData));
+      if (updates.messages) localStorage.setItem('chatMessages', JSON.stringify(updates.messages));
       if ('userProfile' in updates) localStorage.setItem('userProfile', JSON.stringify(updates.userProfile));
     }
   };
@@ -189,9 +186,9 @@ export const AppStateProvider = ({ children }: { children: ReactNode }) => {
 
   const addJournalEntry = (entry: Omit<JournalEntry, 'id' | 'date'> & { date: Date, mood: Mood }) => {
     updateStateAndPersist(prevState => {
-        const dayIndex = prevState.calendarData.findIndex(day => isSameDay(day.date, entry.date));
         const newEntry: JournalEntry = { id: `journal-${Date.now()}`, ...entry };
         const newCalendarData = [...prevState.calendarData];
+        const dayIndex = newCalendarData.findIndex(day => isSameDay(day.date, entry.date));
 
         if (dayIndex > -1) {
             const dayToUpdate = { ...newCalendarData[dayIndex] };
@@ -230,10 +227,10 @@ export const AppStateProvider = ({ children }: { children: ReactNode }) => {
   const addTask = (task: Omit<Task, 'id'>, date: Date) => {
     updateStateAndPersist(prevState => {
         const targetDate = startOfDay(date);
-        const dayIndex = prevState.calendarData.findIndex(day => isSameDay(day.date, targetDate));
+        const newCalendarData = [...prevState.calendarData];
+        const dayIndex = newCalendarData.findIndex(day => isSameDay(day.date, targetDate));
         const newTask: Task = { id: `task-${Date.now()}`, ...task };
 
-        const newCalendarData = [...prevState.calendarData];
         if (dayIndex !== -1) {
             newCalendarData[dayIndex].tasks.push(newTask);
         } else {
@@ -256,10 +253,10 @@ export const AppStateProvider = ({ children }: { children: ReactNode }) => {
     }));
   };
   
-  const setMessagesWithPersistence: React.Dispatch<React.SetStateAction<Message[]>> = (newMessages) => {
+  const setMessagesWithPersistence: React.Dispatch<React.SetStateAction<Message[]>> = (newMessagesAction) => {
       updateStateAndPersist(prevState => {
-        const updatedMessages = typeof newMessages === 'function' ? newMessages(prevState.messages) : newMessages;
-        return { messages: updatedMessages };
+        const newMessages = typeof newMessagesAction === 'function' ? newMessagesAction(prevState.messages) : newMessagesAction;
+        return { messages: newMessages };
       });
   };
 
