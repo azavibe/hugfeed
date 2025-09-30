@@ -91,7 +91,7 @@ User Query:
       prompt: promptText,
     });
 
-    const toolCalls = llmResponse.toolCalls();
+    const toolCalls = llmResponse.toolCalls;
     let generatedTasks: string[] = [];
     
     // Check if the model requested to use any tools.
