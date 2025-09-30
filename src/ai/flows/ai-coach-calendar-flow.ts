@@ -67,8 +67,9 @@ const aiCoachCalendarIntegrationFlow = ai.defineFlow(
   async (input) => {
     
     // Construct the initial prompt with system instructions and user data.
-    const promptParts = [
-      `You are an AI emotional wellness coach in an app called Hugfeed. The user's name is ${input.userName}. Their preferred wellness activities are: ${input.preferredActivities.join(', ') || 'not specified'}.
+    const promptMessage = {
+        role: 'user' as const,
+        content: [part.text(`You are an AI emotional wellness coach in an app called Hugfeed. The user's name is ${input.userName}. Their preferred wellness activities are: ${input.preferredActivities.join(', ') || 'not specified'}.
 
 Your primary jobs are:
 1.  **Be a conversational wellness partner**: If the user is just chatting, asking for advice, or sharing feelings, respond in a friendly, supportive, and insightful manner. Use their calendar data to provide context-aware guidance. You can suggest tasks they can add manually.
@@ -83,12 +84,7 @@ ${input.calendarData}
 
 User Query:
 "${input.query}"
-`
-    ];
-
-    const promptMessage = {
-        role: 'user' as const,
-        content: [part.text(promptParts.join('\n'))]
+`)]
     };
 
     if (input.imageUri) {
@@ -142,4 +138,3 @@ User Query:
     }
   }
 );
-
