@@ -98,67 +98,88 @@ export const AppStateProvider = ({ children }: { children: ReactNode }) => {
     }
   }, [user, db]);
 
-  useEffect(() => {
-    const loadData = async () => {
-        setIsDataLoading(true);
+    useEffect(() => {
+        const loadData = async () => {
+            setIsDataLoading(true);
 
-        if (user && db) {
-            const userDocRef = doc(db, 'users', user.uid);
-            try {
-                const docSnap = await getDoc(userDocRef);
-                
-                if (docSnap.exists()) {
-                    const data = convertTimestampsToDates(docSnap.data());
-                    setCalendarData(data.calendarData || generateMockCalendarData());
-                    setMessages(data.messages || initialMessages);
-                    setUserProfile(data.userProfile || initialUserProfile);
-                } else {
-                    // If no document exists, create one with default data
-                    const initialData = {
-                        calendarData: generateMockCalendarData(),
-                        messages: initialMessages,
-                        userProfile: { ...initialUserProfile, name: user.displayName || 'Wellness Seeker' }
-                    };
-                    setCalendarData(initialData.calendarData);
-                    setMessages(initialData.messages);
-                    setUserProfile(initialData.userProfile);
-                    await setDoc(userDocRef, convertDatesToTimestamps(initialData));
+            // Check for offline status
+            if (!navigator.onLine) {
+                console.warn("App is offline. Loading local data.");
+                try {
+                    const storedCalendarData = localStorage.getItem('calendarData');
+                    const storedMessages = localStorage.getItem('chatMessages');
+                    const storedProfile = localStorage.getItem('userProfile');
+                    setCalendarData(storedCalendarData ? JSON.parse(storedCalendarData).map((day: any) => ({ ...day, date: new Date(day.date) })) : generateMockCalendarData());
+                    setMessages(storedMessages ? JSON.parse(storedMessages) : initialMessages);
+                    setUserProfile(storedProfile ? JSON.parse(storedProfile) : initialUserProfile);
+                } catch (error) {
+                    console.error("Failed to load guest data from localStorage (offline):", error);
+                    setCalendarData(generateMockCalendarData());
+                    setMessages(initialMessages);
+                    setUserProfile(initialUserProfile);
                 }
-            } catch (error) {
-                 console.error("Error fetching user data from Firestore:", error);
-                 // Fallback to mock data on error
-                 setCalendarData(generateMockCalendarData());
-                 setMessages(initialMessages);
-                 setUserProfile(initialUserProfile);
+                setIsDataLoading(false);
+                return;
             }
-        } else {
-            // Guest user: load from localStorage
-            try {
-                const storedCalendarData = localStorage.getItem('calendarData');
-                const storedMessages = localStorage.getItem('chatMessages');
-                const storedProfile = localStorage.getItem('userProfile');
-                
-                setCalendarData(storedCalendarData ? JSON.parse(storedCalendarData).map((day: any) => ({ ...day, date: new Date(day.date) })) : generateMockCalendarData());
-                setMessages(storedMessages ? JSON.parse(storedMessages) : initialMessages);
-                setUserProfile(storedProfile ? JSON.parse(storedProfile) : initialUserProfile);
-            } catch (error) {
-                console.error("Failed to load guest data from localStorage:", error);
-                setCalendarData(generateMockCalendarData());
-                setMessages(initialMessages);
-                setUserProfile(initialUserProfile);
+
+            if (user && db) {
+                try {
+                    const userDocRef = doc(db, 'users', user.uid);
+                    const docSnap = await getDoc(userDocRef);
+                    if (docSnap.exists()) {
+                        const data = convertTimestampsToDates(docSnap.data());
+                        setCalendarData(data.calendarData || generateMockCalendarData());
+                        setMessages(data.messages || initialMessages);
+                        setUserProfile(data.userProfile || initialUserProfile);
+                    } else {
+                        // If no document exists, create one with default data
+                        const initialData = {
+                            calendarData: generateMockCalendarData(),
+                            messages: initialMessages,
+                            userProfile: { ...initialUserProfile, name: user.displayName || 'Wellness Seeker' }
+                        };
+                        setCalendarData(initialData.calendarData);
+                        setMessages(initialData.messages);
+                        setUserProfile(initialData.userProfile);
+                        await setDoc(userDocRef, convertDatesToTimestamps(initialData));
+                    }
+                } catch (error) {
+                    if (!db) {
+                        console.error("Firestore is not initialized. Check Firebase config and initialization.");
+                    }
+                    console.error("Error fetching user data from Firestore:", error);
+                    // Fallback to mock data on error
+                    setCalendarData(generateMockCalendarData());
+                    setMessages(initialMessages);
+                    setUserProfile(initialUserProfile);
+                }
+            } else {
+                // Guest user or Firestore not available: load from localStorage
+                try {
+                    const storedCalendarData = localStorage.getItem('calendarData');
+                    const storedMessages = localStorage.getItem('chatMessages');
+                    const storedProfile = localStorage.getItem('userProfile');
+                    setCalendarData(storedCalendarData ? JSON.parse(storedCalendarData).map((day: any) => ({ ...day, date: new Date(day.date) })) : generateMockCalendarData());
+                    setMessages(storedMessages ? JSON.parse(storedMessages) : initialMessages);
+                    setUserProfile(storedProfile ? JSON.parse(storedProfile) : initialUserProfile);
+                } catch (error) {
+                    console.error("Failed to load guest data from localStorage:", error);
+                    setCalendarData(generateMockCalendarData());
+                    setMessages(initialMessages);
+                    setUserProfile(initialUserProfile);
+                }
             }
-        }
-        setIsDataLoading(false);
-    };
+            setIsDataLoading(false);
+        };
 
-    loadData();
+        loadData();
 
-    return () => {
-      if (debounceTimeoutRef.current) {
-        clearTimeout(debounceTimeoutRef.current);
-      }
-    }
-  }, [user, db]);
+        return () => {
+            if (debounceTimeoutRef.current) {
+                clearTimeout(debounceTimeoutRef.current);
+            }
+        };
+    }, [user, db]);
 
   const updateStateAndPersist = (newCalendarData: CalendarDay[], newMessages: Message[], newUserProfile: UserProfile | null) => {
     setCalendarData(newCalendarData);
