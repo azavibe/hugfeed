@@ -2,7 +2,7 @@
 'use client';
 
 import { useState } from 'react';
-import { addDays, format, isSameDay, startOfWeek, subWeeks, addWeeks, eachDayOfInterval } from 'date-fns';
+import { format, isSameDay, startOfWeek, subWeeks, addWeeks, eachDayOfInterval } from 'date-fns';
 import {
   Carousel,
   CarouselContent,
@@ -16,8 +16,6 @@ import { Mic } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 
 const DayPicker = ({ selectedDate, onDateChange }: { selectedDate: Date; onDateChange: (date: Date) => void; }) => {
-  const [currentDay, setCurrentDay] = useState(selectedDate);
-
   const days = eachDayOfInterval({
     start: subWeeks(startOfWeek(new Date(), { weekStartsOn: 1 }), 2),
     end: addWeeks(startOfWeek(new Date(), { weekStartsOn: 1 }), 4),
@@ -35,7 +33,7 @@ const DayPicker = ({ selectedDate, onDateChange }: { selectedDate: Date; onDateC
     >
       <CarouselContent>
         {days.map((day) => (
-          <CarouselItem key={day.toString()} className="basis-1/5">
+          <CarouselItem key={day.toString()} className="basis-1/5 sm:basis-[calc(20%-0.8rem)]">
              <Button
                 variant={isSameDay(day, selectedDate) ? 'default' : 'ghost'}
                 className="flex flex-col h-auto p-2 w-full"
