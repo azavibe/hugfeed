@@ -49,7 +49,8 @@ export const AppStateProvider = ({ children }: { children: ReactNode }) => {
             const calendarData = data.calendarData?.map((day: any) => ({
                 ...day,
                 date: day.date.toDate(),
-                journalEntry: day.journalEntry ? { ...day.journalEntry, date: day.journalEntry.date.toDate() } : undefined,
+                journalEntry: day.journalEntry ? { ...day.journalEntry, date: day.journalEntry.date.toDate() } : null,
+                mood: day.mood || null,
             })) || [];
             const messages = data.messages || initialMessages;
             return { calendarData, messages };
@@ -64,7 +65,14 @@ export const AppStateProvider = ({ children }: { children: ReactNode }) => {
       if (!db) return;
       const userDocRef = doc(db, 'users', userId);
       try {
-        await setDoc(userDocRef, data, { merge: true });
+        // Sanitize data before sending to Firestore
+        const sanitizedCalendarData = data.calendarData.map(day => ({
+            ...day,
+            mood: day.mood || null,
+            journalEntry: day.journalEntry || null,
+        }));
+
+        await setDoc(userDocRef, { ...data, calendarData: sanitizedCalendarData }, { merge: true });
       } catch(error) {
         console.error("Error setting user data in Firestore:", error);
       }

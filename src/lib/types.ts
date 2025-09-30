@@ -32,8 +32,8 @@ export type Task = {
 
 export type CalendarDay = {
   date: Date;
-  mood?: Mood;
-  journalEntry?: JournalEntry;
+  mood?: Mood | null;
+  journalEntry?: JournalEntry | null;
   tasks: Task[];
 };
 
