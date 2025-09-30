@@ -54,7 +54,6 @@ export function DashboardChat({ selectedDate }: { selectedDate: Date }) {
                 };
                 
                 recognition.onerror = (event) => {
-                    console.error('Speech recognition error', event.error);
                     toast({ title: "Voice Error", description: `Could not recognize speech: ${event.error}`, variant: "destructive" });
                     setIsListening(false);
                 };
