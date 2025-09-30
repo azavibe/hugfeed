@@ -9,17 +9,29 @@ import { Input } from '../ui/input';
 import { Label } from '../ui/label';
 import { RadioGroup, RadioGroupItem } from '../ui/radio-group';
 import { Progress } from '../ui/progress';
-import { Loader2 } from 'lucide-react';
+import { Loader2, Zap, Brain, Coffee, Wind, Dumbbell } from 'lucide-react';
 import { assessMood, MoodAssessmentInput } from '@/ai/flows/mood-assessment-flow';
 import { useToast } from '@/hooks/use-toast';
+import { useAppContext } from '@/context/app-context';
+import { ToggleGroup, ToggleGroupItem } from '../ui/toggle-group';
+import { cn } from '@/lib/utils';
 
-const totalSteps = 4;
+
+const totalSteps = 5;
+
+const wellnessActivities = [
+  { id: 'meditation', label: 'Meditation', icon: Coffee },
+  { id: 'journaling', label: 'Journaling', icon: Brain },
+  { id: 'walking', label: 'Walking', icon: Wind },
+  { id: 'exercise', label: 'Exercise', icon: Dumbbell },
+];
 
 export default function OnboardingFlow() {
   const [step, setStep] = useState(1);
   const [isProcessing, setIsProcessing] = useState(false);
   const router = useRouter();
   const { toast } = useToast();
+  const { updateUserProfile, userProfile } = useAppContext();
 
   const [formData, setFormData] = useState({
     name: '',
@@ -29,6 +41,7 @@ export default function OnboardingFlow() {
     feelings: '',
     sleep: '',
     happiness: '',
+    wellnessActivities: [] as string[],
   });
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -55,6 +68,16 @@ export default function OnboardingFlow() {
   const handleSubmit = async () => {
     setIsProcessing(true);
     try {
+        if (userProfile) {
+            updateUserProfile({
+                ...userProfile,
+                name: formData.name || userProfile.name,
+                goals: [formData.goals],
+                pronouns: formData.pronouns,
+                preferredActivities: formData.wellnessActivities,
+            });
+        }
+        
         const assessmentInput: MoodAssessmentInput = {
             goals: formData.goals,
             causes: formData.causes,
@@ -76,6 +99,7 @@ export default function OnboardingFlow() {
             description: "Could not prepare your plan. Please try again.",
             variant: "destructive",
         });
+    } finally {
         setIsProcessing(false);
     }
   };
@@ -88,8 +112,9 @@ export default function OnboardingFlow() {
         <Progress value={progress} className="mb-4" />
         {step === 1 && <CardTitle className="font-headline text-2xl sm:text-3xl">About You</CardTitle>}
         {step === 2 && <CardTitle className="font-headline text-2xl sm:text-3xl">Your Goals</CardTitle>}
-        {step === 3 && <CardTitle className="font-headline text-2xl sm:text-3xl">How are you feeling?</CardTitle>}
-        {step === 4 && <CardTitle className="font-headline text-2xl sm:text-3xl">Let's check in</CardTitle>}
+        {step === 3 && <CardTitle className="font-headline text-2xl sm:text-3xl">Wellness Preferences</CardTitle>}
+        {step === 4 && <CardTitle className="font-headline text-2xl sm:text-3xl">How are you feeling?</CardTitle>}
+        {step === 5 && <CardTitle className="font-headline text-2xl sm:text-3xl">Let's check in</CardTitle>}
         <CardDescription>This helps us tailor your experience.</CardDescription>
       </CardHeader>
       <CardContent className="min-h-[250px] sm:min-h-[280px]">
@@ -118,7 +143,28 @@ export default function OnboardingFlow() {
             </div>
           </div>
         )}
-         {step === 3 && (
+        {step === 3 && (
+            <div className="space-y-4">
+                <div className="grid gap-2">
+                    <Label>Which wellness activities do you prefer?</Label>
+                    <ToggleGroup 
+                        type="multiple"
+                        variant="outline" 
+                        className="grid grid-cols-2 gap-4"
+                        value={formData.wellnessActivities}
+                        onValueChange={(value) => setFormData(prev => ({...prev, wellnessActivities: value}))}
+                    >
+                        {wellnessActivities.map(activity => (
+                            <ToggleGroupItem key={activity.id} value={activity.id} className="flex flex-col h-24 gap-2">
+                                <activity.icon className="w-8 h-8" />
+                                <span>{activity.label}</span>
+                            </ToggleGroupItem>
+                        ))}
+                    </ToggleGroup>
+                </div>
+            </div>
+        )}
+         {step === 4 && (
           <div className="space-y-4">
              <div className="grid gap-2">
               <Label>What's contributing to how you feel today?</Label>
@@ -131,7 +177,7 @@ export default function OnboardingFlow() {
             </div>
           </div>
         )}
-        {step === 4 && (
+        {step === 5 && (
              <div className="space-y-6">
                 <div className="grid gap-2">
                     <Label>How was your sleep last night?</Label>

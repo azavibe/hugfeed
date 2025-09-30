@@ -14,6 +14,13 @@ import { useAppContext } from '@/context/app-context';
 import { JournalEntryDialog } from './journal-entry-dialog';
 import { Skeleton } from '../ui/skeleton';
 import { cn } from '@/lib/utils';
+import {
+  Carousel,
+  CarouselContent,
+  CarouselItem,
+  CarouselNext,
+  CarouselPrevious,
+} from "@/components/ui/carousel"
 
 const WeeklyDatePicker = ({
   selectedDate,
@@ -22,35 +29,40 @@ const WeeklyDatePicker = ({
   selectedDate: Date;
   onDateChange: (date: Date) => void;
 }) => {
-  const [currentWeek, setCurrentWeek] = useState(startOfWeek(selectedDate, { weekStartsOn: 1 }));
 
-  const weekDays = eachDayOfInterval({
-    start: currentWeek,
-    end: addDays(currentWeek, 6),
+  const days = eachDayOfInterval({
+    start: subWeeks(startOfWeek(new Date(), { weekStartsOn: 1 }), 2),
+    end: addWeeks(startOfWeek(new Date(), { weekStartsOn: 1 }), 4),
   });
 
+  const selectedIndex = days.findIndex(day => isSameDay(day, selectedDate));
+
+
   return (
-    <div className="flex items-center justify-between">
-      <Button variant="outline" size="icon" onClick={() => setCurrentWeek(subWeeks(currentWeek, 1))}>
-        <ChevronLeft className="h-4 w-4" />
-      </Button>
-      <div className="flex items-center gap-1 sm:gap-2">
-        {weekDays.map((day) => (
-          <Button
-            key={day.toString()}
-            variant={isSameDay(day, selectedDate) ? 'default' : 'ghost'}
-            className="flex flex-col h-auto p-1 sm:p-2"
-            onClick={() => onDateChange(day)}
-          >
-            <span className="text-xs">{format(day, 'E')}</span>
-            <span className="text-base sm:text-lg font-bold">{format(day, 'd')}</span>
-          </Button>
+    <Carousel
+      opts={{
+        align: "start",
+        startIndex: selectedIndex > -1 ? selectedIndex - 2 : 0,
+      }}
+      className="w-full max-w-sm sm:max-w-md mx-auto"
+    >
+      <CarouselContent>
+        {days.map((day) => (
+          <CarouselItem key={day.toString()} className="basis-1/5">
+             <Button
+                variant={isSameDay(day, selectedDate) ? 'default' : 'ghost'}
+                className="flex flex-col h-auto p-2 w-full"
+                onClick={() => onDateChange(day)}
+             >
+                <span className="text-xs">{format(day, 'E')}</span>
+                <span className="text-lg font-bold">{format(day, 'd')}</span>
+            </Button>
+          </CarouselItem>
         ))}
-      </div>
-      <Button variant="outline" size="icon" onClick={() => setCurrentWeek(addWeeks(currentWeek, 1))}>
-        <ChevronRight className="h-4 w-4" />
-      </Button>
-    </div>
+      </CarouselContent>
+      <CarouselPrevious className="hidden sm:flex" />
+      <CarouselNext className="hidden sm:flex" />
+    </Carousel>
   );
 };
 

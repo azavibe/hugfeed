@@ -18,7 +18,9 @@ const initialMessages: Message[] = [
 ];
 
 const initialUserProfile: UserProfile = {
-    name: 'Wellness Seeker'
+    name: 'Wellness Seeker',
+    goals: [],
+    preferredActivities: [],
 }
 
 interface AppContextType {
@@ -85,11 +87,18 @@ export const AppStateProvider = ({ children }: { children: ReactNode }) => {
             image: message.image || null,
             suggestions: message.suggestions || null,
         }));
+        
+        const sanitizedProfile = data.userProfile ? {
+            name: data.userProfile.name || 'Wellness Seeker',
+            pronouns: data.userProfile.pronouns || '',
+            goals: data.userProfile.goals || [],
+            preferredActivities: data.userProfile.preferredActivities || [],
+        } : initialUserProfile;
 
         await setDoc(userDocRef, { 
             calendarData: sanitizedCalendarData, 
             messages: sanitizedMessages,
-            userProfile: data.userProfile,
+            userProfile: sanitizedProfile,
         }, { merge: true });
       } catch(error) {
         console.error("Error setting user data in Firestore:", error);

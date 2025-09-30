@@ -1,7 +1,9 @@
+
 export type UserProfile = {
   name: string;
   pronouns?: string;
   goals?: string[];
+  preferredActivities?: string[];
 };
 
 export type Mood = 'awful' | 'bad' | 'ok' | 'good' | 'great';
