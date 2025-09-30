@@ -12,7 +12,6 @@ import {
   SidebarMenuItem,
   SidebarMenuButton,
   SidebarSeparator,
-  SidebarTrigger,
 } from '@/components/ui/sidebar';
 import { Button } from '@/components/ui/button';
 import { Logo } from '@/components/icons';
@@ -44,7 +43,6 @@ export default function AppSidebar() {
               <span className="font-headline text-lg">Hugfeed</span>
             </Link>
         </div>
-        <SidebarTrigger className="hidden md:flex" />
       </SidebarHeader>
       <SidebarContent className="p-2">
         <SidebarMenu>
