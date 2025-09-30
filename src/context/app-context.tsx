@@ -6,14 +6,14 @@ import { CalendarDay, JournalEntry, Message, Task, Mood, UserProfile } from '@/l
 import { generateMockCalendarData } from '@/lib/data';
 import { isSameDay, startOfDay } from 'date-fns';
 import { useUser } from '@/firebase/auth/use-user';
-import { getFirestore, doc, getDoc, setDoc } from 'firebase/firestore';
+import { getFirestore, doc, getDoc, setDoc, Timestamp } from 'firebase/firestore';
 import { useFirestore } from '@/firebase';
 
 const initialMessages: Message[] = [
     {
         id: '1',
         role: 'assistant',
-        content: "Hello! I'm your AI wellness coach. How are you feeling today? Feel free to share what's on your mind, or upload an image that represents your current state."
+        content: "Hello! I'm your AI wellness coach. How are you feeling today? You can talk to me, ask me to plan your day, or upload an image that represents your current state."
     }
 ];
 
@@ -76,8 +76,9 @@ export const AppStateProvider = ({ children }: { children: ReactNode }) => {
       try {
         const sanitizedCalendarData = data.calendarData.map(day => ({
             ...day,
+            date: Timestamp.fromDate(day.date),
             mood: day.mood || null,
-            journalEntry: day.journalEntry || null,
+            journalEntry: day.journalEntry ? { ...day.journalEntry, date: Timestamp.fromDate(day.journalEntry.date) } : null,
         }));
         
         const sanitizedMessages = data.messages.map(message => ({

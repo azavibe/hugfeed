@@ -27,10 +27,10 @@ export default function ChatClient() {
 
     const scrollToBottom = () => {
         if (scrollAreaRef.current) {
-            scrollAreaRef.current.scrollTo({
-                top: scrollAreaRef.current.scrollHeight,
-                behavior: 'smooth'
-            });
+            const viewport = scrollAreaRef.current.querySelector('div');
+            if (viewport) {
+                viewport.scrollTo({ top: viewport.scrollHeight, behavior: 'smooth' });
+            }
         }
     };
 
@@ -40,21 +40,58 @@ export default function ChatClient() {
         const file = event.target.files?.[0];
         if (file) {
             const reader = new FileReader();
-            reader.onload = (e) => {
+            reader.onload = async (e) => {
                 const imageUri = e.target?.result as string;
-                const newMessage: Message = { id: Date.now().toString(), role: 'user', content: 'Here is an image.', image: imageUri };
+                const newMessage: Message = { id: Date.now().toString(), role: 'user', content: 'I uploaded an image.', image: imageUri };
                 setMessages(prev => [...prev, newMessage]);
-                // Mock AI response to image
+                
                 setIsLoading(true);
-                setTimeout(() => {
-                    const aiResponse: Message = { id: (Date.now() + 1).toString(), role: 'assistant', content: 'Thank you for sharing this image. It seems to evoke a sense of calm and introspection. How does this relate to your current feelings?' };
-                    setMessages(prev => [...prev, aiResponse]);
-                    setIsLoading(false);
-                }, 1500);
+                await handleSendWithImage(imageUri);
             };
             reader.readAsDataURL(file);
         }
     }
+
+    const handleSendWithImage = async (imageUri: string, message?: string) => {
+        setIsLoading(true);
+        try {
+             const calendarSummary = calendarData.slice(0, 7).map(d => ({
+                date: format(d.date, 'PPP'),
+                mood: d.mood,
+                journal: d.journalEntry?.title
+            }));
+
+            const result = await aiCoachCalendarIntegration({
+                userId: user?.uid || 'guest-user',
+                userName: userProfile?.name || 'there',
+                preferredActivities: userProfile?.preferredActivities || [],
+                calendarData: JSON.stringify(calendarSummary),
+                query: message || "Here is an image, what do you think?",
+                imageUri: imageUri,
+            });
+
+             const aiResponse: Message = {
+                id: (Date.now() + 1).toString(),
+                role: 'assistant',
+                content: result.response,
+                suggestions: result.suggestedTasks,
+            };
+
+            setMessages(prev => [...prev, aiResponse]);
+
+        } catch (error) {
+            console.error("AI coach error:", error);
+            const errorResponse: Message = {
+                id: (Date.now() + 1).toString(),
+                role: 'assistant',
+                content: "I'm having a little trouble connecting right now. Please try again in a moment.",
+            };
+            setMessages(prev => [...prev, errorResponse]);
+        } finally {
+            setIsLoading(false);
+        }
+    };
+
 
     const handleSend = async () => {
         if (input.trim() === '') return;
@@ -65,6 +102,7 @@ export default function ChatClient() {
             content: input
         };
         setMessages(prev => [...prev, userMessage]);
+        const currentInput = input;
         setInput('');
         setIsLoading(true);
 
@@ -78,9 +116,22 @@ export default function ChatClient() {
 
             const result = await aiCoachCalendarIntegration({
                 userId: user?.uid || 'guest-user',
+                userName: userProfile?.name || 'there',
+                preferredActivities: userProfile?.preferredActivities || [],
                 calendarData: JSON.stringify(calendarSummary),
-                query: input,
+                query: currentInput,
             });
+
+            if (result.tasksToAdd && result.tasksToAdd.length > 0) {
+                const today = new Date();
+                result.tasksToAdd.forEach(task => {
+                    addTask({ content: task, completed: false }, today);
+                });
+                toast({
+                    title: "Tasks Added!",
+                    description: `${result.tasksToAdd.length} task(s) have been added to your calendar for ${format(today, 'PPP')}.`,
+                });
+            }
 
             const aiResponse: Message = {
                 id: (Date.now() + 1).toString(),
@@ -130,7 +181,7 @@ export default function ChatClient() {
                                 </Avatar>
                             )}
                             <div className={cn("max-w-md p-3 rounded-lg", { 'bg-primary text-primary-foreground': message.role === 'user', 'bg-muted': message.role === 'assistant' })}>
-                                <p className="text-sm">{message.content}</p>
+                                <p className="text-sm whitespace-pre-wrap">{message.content}</p>
                                 {message.image && <img src={message.image} alt="User upload" className="mt-2 rounded-lg max-w-xs" />}
                                 {message.suggestions && message.suggestions.length > 0 && (
                                     <div className="mt-4 space-y-2">
