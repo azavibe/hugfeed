@@ -89,11 +89,9 @@ export const AppStateProvider = ({ children }: { children: ReactNode }) => {
             clearTimeout(debounceTimeoutRef.current);
         }
         debounceTimeoutRef.current = setTimeout(async () => {
-            console.log(`Saving data to Firestore for user: ${user.uid}`);
             try {
                 const userDocRef = doc(db, 'users', user.uid);
                 await setDoc(userDocRef, convertDatesToTimestamps(data));
-                console.log('Data saved successfully.');
             } catch (error) {
                 console.error("Error saving state to Firestore:", error);
             }
@@ -104,24 +102,18 @@ export const AppStateProvider = ({ children }: { children: ReactNode }) => {
   useEffect(() => {
     const loadData = async () => {
         setIsDataLoading(true);
-        console.log('AppContext: useEffect loadData triggered.');
 
         if (user && db) {
-            console.log(`Authenticated user found: ${user.uid}. DB instance available:`, !!db);
             const userDocRef = doc(db, 'users', user.uid);
             try {
-                console.log(`Fetching document from Firestore: users/${user.uid}`);
                 const docSnap = await getDoc(userDocRef);
                 
                 if (docSnap.exists()) {
-                    console.log("Document found in Firestore. Processing data...");
                     const data = convertTimestampsToDates(docSnap.data());
                     setCalendarData(data.calendarData || generateMockCalendarData());
                     setMessages(data.messages || initialMessages);
                     setUserProfile(data.userProfile || initialUserProfile);
-                    console.log("State updated from Firestore data.");
                 } else {
-                    console.log("No document found for user. Creating initial data structure.");
                     const initialData = {
                         calendarData: generateMockCalendarData(),
                         messages: initialMessages,
@@ -131,17 +123,14 @@ export const AppStateProvider = ({ children }: { children: ReactNode }) => {
                     setMessages(initialData.messages);
                     setUserProfile(initialData.userProfile);
                     await setDoc(userDocRef, convertDatesToTimestamps(initialData));
-                    console.log("Initial data created and saved for new user.");
                 }
             } catch (error) {
                  console.error("Error fetching user data from Firestore:", error);
-                 console.log("Falling back to mock data due to error.");
                  setCalendarData(generateMockCalendarData());
                  setMessages(initialMessages);
                  setUserProfile(initialUserProfile);
             }
         } else {
-            console.log("No authenticated user. Loading data from localStorage for guest.");
             try {
                 const storedCalendarData = localStorage.getItem('calendarData');
                 const storedMessages = localStorage.getItem('chatMessages');
@@ -150,7 +139,6 @@ export const AppStateProvider = ({ children }: { children: ReactNode }) => {
                 setCalendarData(storedCalendarData ? JSON.parse(storedCalendarData).map((day: any) => ({ ...day, date: new Date(day.date) })) : generateMockCalendarData());
                 setMessages(storedMessages ? JSON.parse(storedMessages) : initialMessages);
                 setUserProfile(storedProfile ? JSON.parse(storedProfile) : initialUserProfile);
-                console.log("Guest data loaded from localStorage.");
             } catch (error) {
                 console.error("Failed to load guest data from localStorage:", error);
                 setCalendarData(generateMockCalendarData());
@@ -159,7 +147,6 @@ export const AppStateProvider = ({ children }: { children: ReactNode }) => {
             }
         }
         setIsDataLoading(false);
-        console.log("Data loading process finished.");
     };
     loadData();
 
