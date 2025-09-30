@@ -32,7 +32,7 @@ export default function OnboardingFlow() {
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
-    setFormData((prev) => ({ ...prev, [value] }));
+    setFormData((prev) => ({ ...prev, [name]: value }));
   };
 
   const handleRadioChange = (name: string, value: string) => {
@@ -96,11 +96,11 @@ export default function OnboardingFlow() {
           <div className="space-y-4">
             <div className="grid gap-2">
               <Label htmlFor="name">Name</Label>
-              <Input id="name" name="name" value={formData.name} onChange={(e) => setFormData(p => ({...p, name: e.target.value}))} placeholder="What should we call you?" />
+              <Input id="name" name="name" value={formData.name} onChange={handleChange} placeholder="What should we call you?" />
             </div>
             <div className="grid gap-2">
               <Label htmlFor="pronouns">Pronouns (optional)</Label>
-              <Input id="pronouns" name="pronouns" value={formData.pronouns} onChange={(e) => setFormData(p => ({...p, pronouns: e.target.value}))} placeholder="e.g., she/her, he/him, they/them" />
+              <Input id="pronouns" name="pronouns" value={formData.pronouns} onChange={handleChange} placeholder="e.g., she/her, he/him, they/them" />
             </div>
           </div>
         )}

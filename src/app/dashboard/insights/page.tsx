@@ -1,3 +1,5 @@
+'use client';
+
 import { BarChart, FileText } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { generateMockCalendarData } from '@/lib/data';
@@ -9,7 +11,7 @@ import {
   ChartTooltipContent,
   ChartConfig,
 } from '@/components/ui/chart';
-import { Bar, XAxis, YAxis, CartesianGrid, BarChart as RechartsBarChart } from 'recharts';
+import { Bar, XAxis, YAxis, CartesianGrid, BarChart as RechartsBarChart, Cell } from 'recharts';
 import { format } from 'date-fns';
 
 const chartData = generateMockCalendarData()
@@ -74,7 +76,7 @@ export default function InsightsPage() {
               />
               <Bar dataKey="value" radius={4}>
                   {chartData.map((entry) => (
-                      <div key={entry.date} style={{backgroundColor: chartConfig[entry.mood as keyof typeof chartConfig]?.color}} />
+                      <Cell key={entry.date} fill={chartConfig[entry.mood as keyof typeof chartConfig]?.color} />
                   ))}
               </Bar>
             </RechartsBarChart>
