@@ -1,4 +1,3 @@
-
 'use server';
 
 /**
@@ -55,9 +54,6 @@ const dashboardChatFlow = ai.defineFlow(
         name: 'dashboardChatFlow',
         inputSchema: DashboardChatInputSchema,
         outputSchema: DashboardChatOutputSchema,
-        experimental: {
-            tools: [addTaskTool]
-        }
     },
     async (input) => {
         const llmResponse = await ai.generate({
@@ -79,9 +75,9 @@ const dashboardChatFlow = ai.defineFlow(
             `,
         });
 
-        const toolCalls = llmResponse.toolCalls();
+        const toolCalls = llmResponse.toolCalls;
         let generatedTasks: string[] = [];
-        if (toolCalls.length > 0) {
+        if (toolCalls && toolCalls.length > 0) {
             for (const call of toolCalls) {
                 if (call.tool === 'addTask') {
                     generatedTasks.push(...call.input.tasks);
@@ -90,7 +86,7 @@ const dashboardChatFlow = ai.defineFlow(
         }
         
         return {
-            response: llmResponse.text(),
+            response: llmResponse.text,
             tasks: generatedTasks,
         };
     }
