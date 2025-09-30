@@ -38,6 +38,7 @@ export async function setMessages(userId: string, messages: any) {
 import { Pool } from '@neondatabase/serverless';
 
 // You should set NEON_DATABASE_URL in your .env file
+console.log('DEBUG: NEON_DATABASE_URL:', process.env.NEON_DATABASE_URL);
 const pool = new Pool({ connectionString: process.env.NEON_DATABASE_URL });
 
 export async function getUserProfile(id: string) {

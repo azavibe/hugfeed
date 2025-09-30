@@ -5,6 +5,7 @@ import { subDays, startOfDay } from 'date-fns';
 const userAvatar = PlaceHolderImages.find((img) => img.id === 'avatar-1');
 
 export const mockUserProfile: UserProfile = {
+  id: 'user-1',
   name: 'Aza Doss',
 };
 
@@ -33,7 +34,7 @@ export const mockJournalEntries: JournalEntry[] = [
 ];
 
 export const mockTasks: Task[] = [
-  { id: 't1', content: 'Morning meditation ritual', completed: true },
+  { id: 't1', content: 'Morning meditation ritual', completed: false },
   { id: 't2', content: 'Journal about today\'s feelings', completed: false },
   { id: 't3', content: 'Go for a 30-minute walk', completed: false },
 ];

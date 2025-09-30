@@ -57,12 +57,15 @@ export const AppStateProvider = ({ children }: { children: ReactNode }) => {
       setIsDataLoading(true);
       try {
         const userId = user?.id || 'demo-user';
-        // Load all app data from Neon DB
-        const [profile, calendar, msgs] = await Promise.all([
-          getUserProfile(userId),
-          getCalendarData(userId),
-          getMessages(userId)
+        // Fetch all app data from API routes
+        const [profileRes, calendarRes, messagesRes] = await Promise.all([
+          fetch(`/api/user-profile?id=${userId}`),
+          fetch(`/api/calendar?id=${userId}`),
+          fetch(`/api/messages?id=${userId}`)
         ]);
+        const profile = await profileRes.json();
+        const calendar = await calendarRes.json();
+        const msgs = await messagesRes.json();
         setUserProfile(profile || initialUserProfile);
         setCalendarData(calendar || generateMockCalendarData());
         setMessages(msgs || initialMessages);
@@ -127,18 +130,36 @@ export const AppStateProvider = ({ children }: { children: ReactNode }) => {
     const userId = user?.id || 'demo-user';
     try {
       await Promise.all([
-        setUserProfile({
-          id: userId,
-          name: newUserProfile?.name || '',
-          pronouns: newUserProfile?.pronouns,
-          goals: newUserProfile?.goals,
-          preferredActivities: newUserProfile?.preferredActivities
+        fetch('/api/user-profile', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            id: userId,
+            name: newUserProfile?.name || '',
+            pronouns: newUserProfile?.pronouns,
+            goals: newUserProfile?.goals,
+            preferredActivities: newUserProfile?.preferredActivities
+          })
         }),
-        setCalendarDataDB(userId, newCalendarData),
-        setMessagesDB(userId, newMessages)
+        fetch('/api/calendar', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            userId,
+            calendarData: newCalendarData
+          })
+        }),
+        fetch('/api/messages', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            userId,
+            messages: newMessages
+          })
+        })
       ]);
     } catch (error) {
-      console.error("Failed to persist app data to Neon DB:", error);
+      console.error("Failed to persist app data to Neon DB via API:", error);
     }
   };
 
@@ -204,8 +225,8 @@ export const AppStateProvider = ({ children }: { children: ReactNode }) => {
   };
   
   const setMessagesWithPersistence: React.Dispatch<React.SetStateAction<Message[]>> = (action) => {
-    const newMessages = typeof action === 'function' ? (action as (prevState: Message[]) => Message[])(messages) : action;
-    updateStateAndPersist(calendarData, newMessages, userProfile);
+  const newMessages = typeof action === 'function' ? (action as (prevState: Message[]) => Message[])(messages) : action as Message[];
+  updateStateAndPersist(calendarData, newMessages, userProfile);
   };
 
   return (

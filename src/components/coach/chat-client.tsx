@@ -63,7 +63,7 @@ export default function ChatClient() {
             }));
 
             const result = await aiCoachCalendarIntegration({
-                userId: user?.uid || 'guest-user',
+                userId: user?.id || 'guest-user',
                 userName: userProfile?.name || 'there',
                 preferredActivities: userProfile?.preferredActivities || [],
                 calendarData: JSON.stringify(calendarSummary),
@@ -116,7 +116,7 @@ export default function ChatClient() {
             }));
 
             const result = await aiCoachCalendarIntegration({
-                userId: user?.uid || 'guest-user',
+                userId: user?.id || 'guest-user',
                 userName: userProfile?.name || 'there',
                 preferredActivities: userProfile?.preferredActivities || [],
                 calendarData: JSON.stringify(calendarSummary),
@@ -198,8 +198,8 @@ export default function ChatClient() {
                             </div>
                             {message.role === 'user' && (
                                 <Avatar className="w-8 h-8">
-                                    <AvatarImage src={user?.photoURL || undefined} />
-                                    <AvatarFallback>{userProfile?.name?.charAt(0) || user?.email?.charAt(0) || 'U'}</AvatarFallback>
+                                    <AvatarImage src={user?.imageUrl || undefined} />
+                                    <AvatarFallback>{userProfile?.name?.charAt(0) || user?.primaryEmailAddress?.emailAddress?.charAt(0) || 'U'}</AvatarFallback>
                                 </Avatar>
                             )}
                         </div>
