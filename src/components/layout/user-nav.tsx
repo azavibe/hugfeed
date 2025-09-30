@@ -1,3 +1,4 @@
+
 'use client';
 
 import {
@@ -18,6 +19,7 @@ import { useUser } from '@/firebase/auth/use-user';
 import { signOut } from 'firebase/auth';
 import { useRouter } from 'next/navigation';
 import { useAppContext } from '@/context/app-context';
+import { cn } from '@/lib/utils';
 
 
 export function UserNav() {
@@ -42,9 +44,9 @@ export function UserNav() {
   if (!user) {
     return (
       <Link href="/" className='w-full'>
-        <Button variant="outline" className='w-full justify-start'>
-          <LogIn className="mr-2 h-4 w-4" />
-          Login / Sign Up
+        <Button variant="outline" className='w-full justify-start group-data-[collapsible=icon]:justify-center group-data-[collapsible=icon]:w-8 group-data-[collapsible=icon]:h-8'>
+          <LogIn className="mr-2 h-4 w-4 group-data-[collapsible=icon]:mr-0" />
+          <span className="group-data-[collapsible=icon]:hidden">Login / Sign Up</span>
         </Button>
       </Link>
     );
@@ -55,13 +57,13 @@ export function UserNav() {
       <DropdownMenuTrigger asChild>
         <Button
           variant="ghost"
-          className="relative h-12 w-full justify-start gap-2 px-2"
+          className="relative h-12 w-full justify-start gap-2 px-2 group-data-[collapsible=icon]:w-8 group-data-[collapsible=icon]:h-8 group-data-[collapsible=icon]:p-0 group-data-[collapsible=icon]:justify-center"
         >
           <Avatar className="h-8 w-8">
             <AvatarImage src={user.photoURL || ''} alt={user.displayName || ''} />
             <AvatarFallback>{userProfile?.name?.charAt(0) || user.email?.charAt(0)}</AvatarFallback>
           </Avatar>
-          <div className="text-left">
+          <div className="text-left group-data-[collapsible=icon]:hidden">
             <p className="text-sm font-medium truncate">{userProfile?.name || 'User'}</p>
             <p className="text-xs text-muted-foreground truncate">{user.email}</p>
           </div>

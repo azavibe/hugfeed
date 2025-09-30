@@ -23,6 +23,7 @@ import {
   Gem,
 } from 'lucide-react';
 import { UserNav } from './user-nav';
+import { cn } from '@/lib/utils';
 
 const navItems = [
   { href: '/dashboard', icon: Calendar, label: 'Dashboard' },
@@ -38,8 +39,8 @@ export default function AppSidebar() {
     <Sidebar collapsible="icon">
       <SidebarHeader>
         <Link href="/dashboard" className="flex items-center gap-2">
-          <Logo className="w-8 h-8 text-primary" />
-          <span className="font-headline text-lg">Hugfeed</span>
+          <Logo className="w-8 h-8 text-primary shrink-0" />
+          <span className="font-headline text-lg group-data-[collapsible=icon]:hidden">Hugfeed</span>
         </Link>
       </SidebarHeader>
       <SidebarContent className="p-2">
@@ -61,9 +62,9 @@ export default function AppSidebar() {
       </SidebarContent>
       <SidebarFooter className="p-2">
         <Link href="/pricing" className="w-full">
-            <Button variant="outline" className="w-full justify-start text-left">
-                <Gem className="mr-2" />
-                <span>Upgrade Plan</span>
+            <Button variant="outline" className={cn("w-full justify-start text-left", "group-data-[collapsible=icon]:justify-center group-data-[collapsible=icon]:w-8 group-data-[collapsible=icon]:h-8")}>
+                <Gem />
+                <span className="group-data-[collapsible=icon]:hidden">Upgrade Plan</span>
             </Button>
         </Link>
         <SidebarSeparator />
