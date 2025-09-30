@@ -1,7 +1,8 @@
+
 'use client';
 
-import { BarChart, FileText } from 'lucide-react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { BarChart, FileText, TrendingUp, CheckCircle } from 'lucide-react';
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { MoodEmojis } from '@/lib/types';
 import { useAppContext } from '@/context/app-context';
 import {
@@ -13,8 +14,9 @@ import {
 import { Bar, XAxis, YAxis, CartesianGrid, BarChart as RechartsBarChart, Cell } from 'recharts';
 import { format } from 'date-fns';
 import { Skeleton } from '@/components/ui/skeleton';
+import { Progress } from '@/components/ui/progress';
 
-const chartConfig = {
+const moodChartConfig = {
   mood: {
     label: 'Mood',
   },
@@ -25,23 +27,51 @@ const chartConfig = {
   awful: { label: 'Awful', color: 'hsl(var(--chart-5))' },
 } satisfies ChartConfig;
 
+const tasksChartConfig = {
+  tasksCompleted: {
+    label: 'Tasks Completed',
+    color: 'hsl(var(--chart-1))',
+  },
+} satisfies ChartConfig;
+
+
 export default function InsightsPage() {
   const { calendarData, isDataLoading } = useAppContext();
 
-  const chartData = calendarData
+  // Data for mood chart
+  const moodChartData = calendarData
     .filter(d => d.mood)
     .map(d => ({
       date: format(d.date, 'MMM d'),
       mood: d.mood,
       value: Object.keys(MoodEmojis).indexOf(d.mood!) + 1,
     }))
-    .slice(0, 30) // Limit to last 30 entries for performance
+    .slice(0, 30) // Limit to last 30 entries
     .reverse();
 
+  // Data for journal entries
   const journalEntries = calendarData
     .filter(d => d.journalEntry)
     .sort((a,b) => b.date.getTime() - a.date.getTime())
     .slice(0, 10); // Limit to last 10 entries
+
+  // Data for progress tracking
+  const weeklyCompletionData = calendarData
+    .slice(0, 7) // Last 7 days
+    .map(day => {
+      const totalTasks = day.tasks.length;
+      const completedTasks = day.tasks.filter(t => t.completed).length;
+      const completionRate = totalTasks > 0 ? (completedTasks / totalTasks) * 100 : 0;
+      return {
+        date: new Date(day.date).toLocaleDateString('en-US', { weekday: 'short' }),
+        tasksCompleted: completedTasks,
+        completionRate: completionRate,
+      };
+    })
+    .reverse();
+
+  const overallCompletion = weeklyCompletionData.reduce((acc, day) => acc + day.completionRate, 0) / (weeklyCompletionData.length || 1);
+
 
   return (
     <div className="space-y-8">
@@ -50,56 +80,134 @@ export default function InsightsPage() {
           Your Wellness Insights
         </h1>
         <p className="text-muted-foreground mt-2 text-lg">
-          Discover patterns in your emotional journey.
+          Discover patterns, track your consistency, and celebrate your wins.
         </p>
+      </div>
+
+       <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <TrendingUp className="w-6 h-6" />
+            Weekly Habit Tracker
+          </CardTitle>
+          <CardDescription>
+            Your task completion rate for the last 7 days.
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+            {isDataLoading ? (
+                 <Skeleton className="h-[50px] w-full" />
+            ) : (
+                <div className="space-y-2">
+                    <Progress value={overallCompletion} className="h-4" />
+                    <p className="text-right text-muted-foreground text-sm">{Math.round(overallCompletion)}% average completion</p>
+                </div>
+            )}
+        </CardContent>
+      </Card>
+
+      <div className="grid md:grid-cols-2 gap-8">
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <BarChart className="w-6 h-6" />
+              Mood Fluctuation
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            {isDataLoading ? (
+              <Skeleton className="h-[250px] w-full" />
+            ) : moodChartData.length > 0 ? (
+              <ChartContainer config={moodChartConfig} className="min-h-[250px] w-full">
+                <RechartsBarChart accessibilityLayer data={moodChartData}>
+                  <CartesianGrid vertical={false} />
+                  <XAxis
+                    dataKey="date"
+                    tickLine={false}
+                    tickMargin={10}
+                    axisLine={false}
+                  />
+                  <YAxis hide={true} />
+                  <ChartTooltip
+                    cursor={false}
+                    content={<ChartTooltipContent 
+                        formatter={(value, name, props) => (
+                            <div className="flex items-center gap-2">
+                                <div className="w-3 h-3 rounded-full" style={{backgroundColor: moodChartConfig[props.payload.mood as keyof typeof moodChartConfig]?.color}}></div>
+                                <span>{MoodEmojis[props.payload.mood as keyof typeof MoodEmojis]} {moodChartConfig[props.payload.mood as keyof typeof moodChartConfig]?.label}</span>
+                            </div>
+                        )}
+                    />}
+                  />
+                  <Bar dataKey="value" radius={4}>
+                      {moodChartData.map((entry) => (
+                          <Cell key={entry.date} fill={moodChartConfig[entry.mood as keyof typeof moodChartConfig]?.color} />
+                      ))}
+                  </Bar>
+                </RechartsBarChart>
+              </ChartContainer>
+            ) : (
+              <div className="h-[250px] flex items-center justify-center text-muted-foreground">
+                  <p>Not enough mood data to display chart. Start logging your mood!</p>
+              </div>
+            )}
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <BarChart className="w-6 h-6" />
+              Tasks Completed Per Day
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            {isDataLoading ? (
+              <Skeleton className="h-[250px] w-full" />
+            ) : weeklyCompletionData.length > 0 ? (
+              <ChartContainer config={tasksChartConfig} className="min-h-[250px] w-full">
+                <RechartsBarChart accessibilityLayer data={weeklyCompletionData}>
+                  <CartesianGrid vertical={false} />
+                  <XAxis
+                    dataKey="date"
+                    tickLine={false}
+                    tickMargin={10}
+                    axisLine={false}
+                  />
+                  <YAxis />
+                  <ChartTooltip
+                    cursor={false}
+                    content={<ChartTooltipContent />}
+                  />
+                  <Bar dataKey="tasksCompleted" fill="var(--color-tasksCompleted)" radius={4} />
+                </RechartsBarChart>
+              </ChartContainer>
+            ) : (
+              <div className="h-[250px] flex items-center justify-center text-muted-foreground">
+                  <p>No task data to display. Start adding tasks to your calendar!</p>
+              </div>
+            )}
+          </CardContent>
+        </Card>
       </div>
 
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
-            <BarChart className="w-6 h-6" />
-            Mood Fluctuation
+            <CheckCircle className="w-6 h-6" />
+            Distraction Analysis
           </CardTitle>
+           <CardDescription>
+            Understand what's getting in your way. (Coming Soon)
+          </CardDescription>
         </CardHeader>
         <CardContent>
-          {isDataLoading ? (
-            <Skeleton className="h-[250px] w-full" />
-          ) : chartData.length > 0 ? (
-            <ChartContainer config={chartConfig} className="min-h-[250px] w-full">
-              <RechartsBarChart accessibilityLayer data={chartData}>
-                <CartesianGrid vertical={false} />
-                <XAxis
-                  dataKey="date"
-                  tickLine={false}
-                  tickMargin={10}
-                  axisLine={false}
-                />
-                <YAxis hide={true} />
-                <ChartTooltip
-                  cursor={false}
-                  content={<ChartTooltipContent 
-                      formatter={(value, name, props) => (
-                          <div className="flex items-center gap-2">
-                              <div className="w-3 h-3 rounded-full" style={{backgroundColor: chartConfig[props.payload.mood as keyof typeof chartConfig]?.color}}></div>
-                              <span>{MoodEmojis[props.payload.mood as keyof typeof MoodEmojis]} {chartConfig[props.payload.mood as keyof typeof chartConfig]?.label}</span>
-                          </div>
-                      )}
-                  />}
-                />
-                <Bar dataKey="value" radius={4}>
-                    {chartData.map((entry) => (
-                        <Cell key={entry.date} fill={chartConfig[entry.mood as keyof typeof chartConfig]?.color} />
-                    ))}
-                </Bar>
-              </RechartsBarChart>
-            </ChartContainer>
-          ) : (
-             <div className="h-[250px] flex items-center justify-center text-muted-foreground">
-                <p>Not enough mood data to display chart. Start logging your mood!</p>
+            <div className="h-[250px] flex items-center justify-center text-muted-foreground bg-muted/50 rounded-lg">
+                <p>Track reasons for incomplete tasks to uncover patterns.</p>
             </div>
-          )}
         </CardContent>
       </Card>
+
 
       <Card>
         <CardHeader>
