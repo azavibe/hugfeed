@@ -1,3 +1,14 @@
+import { Pool } from '@neondatabase/serverless';
+
+// You should set NEON_DATABASE_URL in your .env file
+console.log('DEBUG: NEON_DATABASE_URL:', process.env.NEON_DATABASE_URL);
+
+if (!process.env.NEON_DATABASE_URL || process.env.NEON_DATABASE_URL === 'your_neon_database_url_here') {
+  console.warn('NEON_DATABASE_URL is not set or is using placeholder value. Database operations will fail.');
+}
+
+const pool = new Pool({ connectionString: process.env.NEON_DATABASE_URL });
+
 // Calendar CRUD
 export async function getCalendarData(userId: string) {
   const result = await pool.query(
@@ -5,41 +16,103 @@ export async function getCalendarData(userId: string) {
     [userId]
   );
   if (result.rows.length === 0) return null;
-  return JSON.parse(result.rows[0].data);
+  try {
+    return JSON.parse(result.rows[0].data);
+  } catch (error) {
+    console.error('Error parsing calendar data:', error);
+    return null;
+  }
 }
 
 export async function setCalendarData(userId: string, calendarData: any) {
+  let jsonString: string;
+  
+  if (typeof calendarData === 'string') {
+    // Validate the string is valid JSON
+    try {
+      JSON.parse(calendarData);
+      jsonString = calendarData;
+    } catch {
+      throw new Error('Invalid JSON string provided');
+    }
+  } else {
+    // Convert object to JSON string
+    try {
+      jsonString = JSON.stringify(calendarData);
+      // Validate the stringified result
+      JSON.parse(jsonString);
+    } catch {
+      throw new Error('Unable to serialize calendar data to JSON');
+    }
+  }
+  
   await pool.query(
     `INSERT INTO calendar (user_id, data)
      VALUES ($1, $2)
      ON CONFLICT (user_id) DO UPDATE SET data = EXCLUDED.data`,
-    [userId, JSON.stringify(calendarData)]
+    [userId, jsonString]
   );
 }
 
 // Messages CRUD
 export async function getMessages(userId: string) {
-  const result = await pool.query(
-    'SELECT data FROM messages WHERE user_id = $1',
-    [userId]
-  );
-  if (result.rows.length === 0) return null;
-  return JSON.parse(result.rows[0].data);
+  try {
+    const result = await pool.query(
+      'SELECT data FROM messages WHERE user_id = $1',
+      [userId]
+    );
+    if (result.rows.length === 0) return null;
+    try {
+      return JSON.parse(result.rows[0].data);
+    } catch (error) {
+      console.error('Error parsing messages data:', error);
+      return null;
+    }
+  } catch (error) {
+    console.error('Error getting messages:', error);
+    throw error;
+  }
 }
 
 export async function setMessages(userId: string, messages: any) {
-  await pool.query(
-    `INSERT INTO messages (user_id, data)
-     VALUES ($1, $2)
-     ON CONFLICT (user_id) DO UPDATE SET data = EXCLUDED.data`,
-    [userId, JSON.stringify(messages)]
-  );
+  try {
+    console.log('setMessages called with:', { userId, messages, messagesType: typeof messages });
+    let jsonString: string;
+    
+    if (typeof messages === 'string') {
+      console.log('Messages is already a string:', messages);
+      // Validate the string is valid JSON
+      try {
+        JSON.parse(messages);
+        jsonString = messages;
+      } catch {
+        throw new Error('Invalid JSON string provided');
+      }
+    } else {
+      // Convert object to JSON string
+      try {
+        console.log('Converting messages to JSON string:', messages);
+        jsonString = JSON.stringify(messages);
+        console.log('Stringified result:', jsonString);
+        // Validate the stringified result
+        JSON.parse(jsonString);
+      } catch (error) {
+        console.error('Serialization error:', error);
+        throw new Error('Unable to serialize messages data to JSON');
+      }
+    }
+    
+    await pool.query(
+      `INSERT INTO messages (user_id, data)
+       VALUES ($1, $2)
+       ON CONFLICT (user_id) DO UPDATE SET data = EXCLUDED.data`,
+      [userId, jsonString]
+    );
+  } catch (error) {
+    console.error('Error setting messages:', error);
+    throw error;
+  }
 }
-import { Pool } from '@neondatabase/serverless';
-
-// You should set NEON_DATABASE_URL in your .env file
-console.log('DEBUG: NEON_DATABASE_URL:', process.env.NEON_DATABASE_URL);
-const pool = new Pool({ connectionString: process.env.NEON_DATABASE_URL });
 
 export async function getUserProfile(id: string) {
   const result = await pool.query(
@@ -52,8 +125,20 @@ export async function getUserProfile(id: string) {
     id: row.id,
     name: row.name,
     pronouns: row.pronouns,
-    goals: row.goals ? JSON.parse(row.goals) : [],
-    preferredActivities: row.preferred_activities ? JSON.parse(row.preferred_activities) : [],
+    goals: row.goals ? (() => {
+      try {
+        return JSON.parse(row.goals);
+      } catch {
+        return [];
+      }
+    })() : [],
+    preferredActivities: row.preferred_activities ? (() => {
+      try {
+        return JSON.parse(row.preferred_activities);
+      } catch {
+        return [];
+      }
+    })() : [],
   };
 }
 

@@ -1,12 +1,11 @@
+'use client';
 
 import { useUser } from '@clerk/nextjs';
 
-'use client';
-
-import { useState, useRef, useEffect, ChangeEvent } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { Button } from '../ui/button';
 import { Input } from '../ui/input';
-import { Paperclip, Send, Loader2, PlusCircle } from 'lucide-react';
+import { Send, Loader2 } from 'lucide-react';
 import { ScrollArea } from '../ui/scroll-area';
 import { Avatar, AvatarFallback, AvatarImage } from '../ui/avatar';
 import { cn } from '@/lib/utils';
@@ -18,13 +17,24 @@ import { useAppContext } from '@/context/app-context';
 import { format } from 'date-fns';
 
 export default function ChatClient() {
-    const { messages, setMessages, addTask, calendarData, userProfile } = useAppContext();
+    const { messages, addMessage, addTasks, calendarData, userProfile } = useAppContext();
     const { user } = useUser();
     const [input, setInput] = useState('');
     const [isLoading, setIsLoading] = useState(false);
     const scrollAreaRef = useRef<HTMLDivElement>(null);
     const fileInputRef = useRef<HTMLInputElement>(null);
     const { toast } = useToast();
+    
+    // Add initial welcome message if no messages exist
+    useEffect(() => {
+        if (messages.length === 0 && userProfile?.name) {
+            addMessage({
+                id: 'welcome',
+                role: 'assistant',
+                content: `Hello ${userProfile.name}! I'm your AI wellness coach. How can I help you today? I can help you plan your day, suggest wellness activities, or just chat about how you're feeling.`
+            });
+        }
+    }, [messages.length, userProfile?.name, addMessage]);
 
     const scrollToBottom = () => {
         if (scrollAreaRef.current) {
@@ -37,136 +47,72 @@ export default function ChatClient() {
 
     useEffect(scrollToBottom, [messages]);
     
-    const handleImageUpload = (event: ChangeEvent<HTMLInputElement>) => {
-        const file = event.target.files?.[0];
-        if (file) {
-            const reader = new FileReader();
-            reader.onload = async (e) => {
-                const imageUri = e.target?.result as string;
-                const newMessage: Message = { id: Date.now().toString(), role: 'user', content: 'I uploaded an image.', image: imageUri };
-                setMessages(prev => [...prev, newMessage]);
-                
-                setIsLoading(true);
-                await handleSendWithImage(imageUri);
-            };
-            reader.readAsDataURL(file);
-        }
-    }
-
-    const handleSendWithImage = async (imageUri: string, message?: string) => {
-        setIsLoading(true);
-        try {
-             const calendarSummary = calendarData.slice(0, 7).map(d => ({
-                date: format(d.date, 'PPP'),
-                mood: d.mood,
-                journal: d.journalEntry?.title
-            }));
-
-            const result = await aiCoachCalendarIntegration({
-                userId: user?.id || 'guest-user',
-                userName: userProfile?.name || 'there',
-                preferredActivities: userProfile?.preferredActivities || [],
-                calendarData: JSON.stringify(calendarSummary),
-                query: message || "Here is an image, what do you think?",
-                imageUri: imageUri,
-            });
-
-             const aiResponse: Message = {
-                id: (Date.now() + 1).toString(),
-                role: 'assistant',
-                content: result.response,
-                suggestions: result.suggestedTasks,
-            };
-
-            setMessages(prev => [...prev, aiResponse]);
-
-        } catch (error) {
-            console.error("AI coach error:", error);
-            const errorResponse: Message = {
-                id: (Date.now() + 1).toString(),
-                role: 'assistant',
-                content: "I'm having a little trouble connecting right now. Please try again in a moment.",
-            };
-            setMessages(prev => [...prev, errorResponse]);
-        } finally {
-            setIsLoading(false);
-        }
-    };
 
 
     const handleSend = async () => {
-        if (input.trim() === '') return;
+        if (input.trim() === '' || isLoading) return;
         
         const userMessage: Message = {
             id: Date.now().toString(),
             role: 'user',
             content: input
         };
-        setMessages(prev => [...prev, userMessage]);
+        
+        // Add user message to chat
+        addMessage(userMessage);
         const currentInput = input;
         setInput('');
         setIsLoading(true);
 
         try {
-            // Abridged calendar data for the prompt
-            const calendarSummary = calendarData.slice(0, 7).map(d => ({
-                date: format(d.date, 'PPP'),
+            // Prepare calendar context
+            const recentCalendarData = calendarData.slice(0, 7).map(d => ({
+                date: format(d.date, 'MMM d'),
                 mood: d.mood,
+                tasks: d.tasks?.length || 0,
                 journal: d.journalEntry?.title
             }));
 
             const result = await aiCoachCalendarIntegration({
                 userId: user?.id || 'guest-user',
-                userName: userProfile?.name || 'there',
-                preferredActivities: userProfile?.preferredActivities || [],
-                calendarData: JSON.stringify(calendarSummary),
-                query: currentInput,
+                userName: userProfile?.name || 'User',
+                userMessage: currentInput,
+                calendarContext: recentCalendarData.length > 0 ? JSON.stringify(recentCalendarData) : undefined
             });
 
+            // If AI generated tasks, add them to calendar
             if (result.tasksToAdd && result.tasksToAdd.length > 0) {
                 const today = new Date();
-                result.tasksToAdd.forEach(task => {
-                    addTask({ content: task, completed: false }, today);
-                });
+                addTasks(result.tasksToAdd, today);
+                
                 toast({
                     title: "Tasks Added!",
-                    description: `${result.tasksToAdd.length} task(s) have been added to your calendar for ${format(today, 'PPP')}.`,
+                    description: `${result.tasksToAdd.length} task(s) have been added to your calendar for today.`,
                 });
             }
 
+            // Add AI response to chat
             const aiResponse: Message = {
                 id: (Date.now() + 1).toString(),
                 role: 'assistant',
-                content: result.response,
-                suggestions: result.suggestedTasks,
+                content: result.response
             };
-
-            setMessages(prev => [...prev, aiResponse]);
+            
+            addMessage(aiResponse);
 
         } catch (error) {
-            console.error("AI coach error:", error);
+            console.error('AI coach error:', error);
             const errorResponse: Message = {
                 id: (Date.now() + 1).toString(),
                 role: 'assistant',
-                content: "I'm having a little trouble connecting right now. Please try again in a moment.",
+                content: "I'm having trouble connecting right now. Please try again in a moment."
             };
-            setMessages(prev => [...prev, errorResponse]);
+            addMessage(errorResponse);
         } finally {
             setIsLoading(false);
         }
     };
     
-    const handleSuggestionClick = (taskContent: string) => {
-        const newTask = {
-            content: taskContent,
-            completed: false,
-        };
-        addTask(newTask, new Date());
-        toast({
-            title: "Task Added!",
-            description: `"${taskContent}" has been added to your calendar for ${format(new Date(), 'PPP')}.`
-        });
-    }
 
     return (
         <div className="flex flex-col h-full bg-card border rounded-lg">
@@ -183,18 +129,6 @@ export default function ChatClient() {
                             )}
                             <div className={cn("max-w-md p-3 rounded-lg", { 'bg-primary text-primary-foreground': message.role === 'user', 'bg-muted': message.role === 'assistant' })}>
                                 <p className="text-sm whitespace-pre-wrap">{message.content}</p>
-                                {message.image && <img src={message.image} alt="User upload" className="mt-2 rounded-lg max-w-xs" />}
-                                {message.suggestions && message.suggestions.length > 0 && (
-                                    <div className="mt-4 space-y-2">
-                                        <p className="text-xs font-semibold">Here are some suggestions for you:</p>
-                                        {message.suggestions.map((task, index) => (
-                                            <Button key={index} variant="secondary" size="sm" className="w-full justify-start text-left h-auto py-2" onClick={() => handleSuggestionClick(task)}>
-                                                <PlusCircle className="w-4 h-4 mr-2 mt-0.5 self-start shrink-0"/>
-                                                <span>{task}</span>
-                                            </Button>
-                                        ))}
-                                    </div>
-                                )}
                             </div>
                             {message.role === 'user' && (
                                 <Avatar className="w-8 h-8">
@@ -221,20 +155,25 @@ export default function ChatClient() {
             <div className="p-4 border-t">
                 <div className="relative">
                     <Input
-                        placeholder="Type your message..."
-                        className="pr-24"
+                        placeholder="Ask me to plan your day, or just chat about how you're feeling..."
+                        className="pr-12"
                         value={input}
                         onChange={(e) => setInput(e.target.value)}
-                        onKeyDown={(e) => e.key === 'Enter' && handleSend()}
+                        onKeyDown={(e) => {
+                            if (e.key === 'Enter' && !e.shiftKey) {
+                                e.preventDefault();
+                                handleSend();
+                            }
+                        }}
                         disabled={isLoading}
                     />
-                    <div className="absolute top-1/2 right-2 -translate-y-1/2 flex items-center gap-1">
-                        <Button variant="ghost" size="icon" onClick={() => fileInputRef.current?.click()} disabled={isLoading}>
-                            <Paperclip className="w-5 h-5" />
-                        </Button>
-                        <input type="file" ref={fileInputRef} onChange={handleImageUpload} accept="image/*" className="hidden" />
-                        <Button size="icon" onClick={handleSend} disabled={isLoading}>
-                            <Send className="w-5 h-5" />
+                    <div className="absolute top-1/2 right-2 -translate-y-1/2">
+                        <Button size="icon" onClick={handleSend} disabled={isLoading || input.trim() === ''}>
+                            {isLoading ? (
+                                <Loader2 className="w-4 h-4 animate-spin" />
+                            ) : (
+                                <Send className="w-4 h-4" />
+                            )}
                         </Button>
                     </div>
                 </div>

@@ -15,7 +15,7 @@ import { Message } from '@/lib/types';
 
 
 export function DashboardChat({ selectedDate }: { selectedDate: Date }) {
-    const { addTask, userProfile, setMessages, calendarData } = useAppContext();
+    const { addTasks, userProfile, calendarData } = useAppContext();
     const { user } = useUser();
     const { toast } = useToast();
     
@@ -77,51 +77,43 @@ export function DashboardChat({ selectedDate }: { selectedDate: Date }) {
 
     const handleSend = async (messageText?: string) => {
         const textToSend = messageText || input;
-        if (textToSend.trim() === '') return;
+        if (textToSend.trim() === '' || isThinking) return;
 
-        const userMessage: Message = { id: Date.now().toString(), role: 'user', content: textToSend };
-        setMessages(prev => [...prev, userMessage]);
         setInput('');
         setIsThinking(true);
 
         try {
-            const calendarSummary = calendarData.slice(0, 7).map(d => ({
-                date: format(d.date, 'PPP'),
+            // Prepare calendar context  
+            const recentCalendarData = calendarData.slice(0, 7).map(d => ({
+                date: format(d.date, 'MMM d'),
                 mood: d.mood,
+                tasks: d.tasks?.length || 0,
                 journal: d.journalEntry?.title
             }));
 
             const result = await aiCoachCalendarIntegration({
                 userId: user?.id || 'guest-user',
-                userName: userProfile?.name || 'there',
-                preferredActivities: userProfile?.preferredActivities || [],
-                calendarData: JSON.stringify(calendarSummary),
-                query: textToSend,
+                userName: userProfile?.name || 'User',
+                userMessage: textToSend,
+                calendarContext: recentCalendarData.length > 0 ? JSON.stringify(recentCalendarData) : undefined
             });
 
+            // If AI generated tasks, add them to calendar
             if (result.tasksToAdd && result.tasksToAdd.length > 0) {
-                result.tasksToAdd.forEach(task => {
-                    addTask({ content: task, completed: false }, selectedDate);
-                });
+                addTasks(result.tasksToAdd, selectedDate);
                 toast({
                     title: "Tasks Added!",
                     description: `${result.tasksToAdd.length} task(s) have been added to your calendar for ${format(selectedDate, 'PPP')}.`,
                 });
             }
 
-            const aiResponse: Message = { 
-                id: (Date.now() + 1).toString(), 
-                role: 'assistant', 
-                content: result.response,
-                suggestions: result.suggestedTasks,
-            };
-            setMessages(prev => [...prev, aiResponse]);
-
         } catch (error) {
-            console.error("Dashboard chat error:", error);
-            const errorResponse: Message = { id: (Date.now() + 1).toString(), role: 'assistant', content: "I'm having trouble connecting right now. Please try again." };
-            setMessages(prev => [...prev, errorResponse]);
-            toast({ title: "AI Error", description: "Could not get a response from the assistant.", variant: "destructive" });
+            console.error('Dashboard chat error:', error);
+            toast({ 
+                title: "AI Error", 
+                description: "Could not get a response from the assistant.", 
+                variant: "destructive" 
+            });
         } finally {
             setIsThinking(false);
         }

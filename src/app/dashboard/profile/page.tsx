@@ -1,6 +1,5 @@
 'use client';
 
-'use client';
 import { useUser } from '@clerk/nextjs';
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -14,13 +13,11 @@ import { useState, useEffect } from "react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useToast } from "@/hooks/use-toast";
 
-
 export default function ProfilePage() {
-    const { user, loading: userLoading } = useUser();
-        const { user } = useUser();
+    const { user, isLoaded: userLoaded } = useUser();
+    const { userProfile, updateUserProfile, isDataLoading } = useAppContext();
     const [name, setName] = useState('');
     const { toast } = useToast();
-import { useUser } from '@clerk/nextjs';
     useEffect(() => {
         if (userProfile) {
             setName(userProfile.name);
@@ -31,21 +28,20 @@ import { useUser } from '@clerk/nextjs';
         if (userProfile) {
             updateUserProfile({ ...userProfile, name });
             toast({
-            import { useUser } from '@clerk/nextjs';
                 title: "Profile Updated",
                 description: "Your changes have been saved successfully.",
             });
         }
     }
 
-    const isLoading = userLoading || isDataLoading;
+    const isLoading = !userLoaded || isDataLoading;
 
     return (
         <div className="space-y-8">
             <div>
                 <h1 className="font-headline text-3xl md:text-4xl text-foreground">
-            export default function ProfilePage() {
-                const { user } = useUser();
+                    Your Profile
+                </h1>
                 <p className="text-muted-foreground mt-2 text-lg">
                     Manage your account, preferences, and subscription.
                 </p>
@@ -65,7 +61,7 @@ import { useUser } from '@clerk/nextjs';
                                     <Skeleton className="h-10 w-28" />
                                 </div>
                             ) : (
-                const isLoading = isDataLoading;
+                                <div className="flex items-center gap-4">
                                      <Image src={user?.imageUrl || 'https://picsum.photos/seed/avatar-placeholder/80/80'} alt="User avatar" width={80} height={80} className="rounded-full" />
                                      <Button variant="outline">Change Photo</Button>
                                 </div>
