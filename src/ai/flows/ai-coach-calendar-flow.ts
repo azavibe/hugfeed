@@ -10,6 +10,7 @@
 
 import {ai} from '@/ai/genkit';
 import {z} from 'genkit';
+import {generate, part} from 'genkit/ai';
 
 // Define a tool for adding tasks to the user's calendar
 const addTaskTool = ai.defineTool(
@@ -19,11 +20,13 @@ const addTaskTool = ai.defineTool(
         inputSchema: z.object({
             tasks: z.array(z.string()).describe("A list of task descriptions to be added."),
         }),
-        outputSchema: z.void(),
+        outputSchema: z.object({ success: z.boolean() }),
     },
-    async () => {
+    async ({tasks}) => {
         // This is a client-side tool. The implementation is handled by the component
         // that calls the flow. Genkit uses this definition for prompting.
+        // We just need to signal success back to the model.
+        return { success: true };
     }
 );
 
@@ -59,15 +62,10 @@ const aiCoachCalendarIntegrationFlow = ai.defineFlow(
     name: 'aiCoachCalendarIntegrationFlow',
     inputSchema: AICoachCalendarIntegrationInputSchema,
     outputSchema: AICoachCalendarIntegrationOutputSchema,
-    experimental: {
-      tools: [addTaskTool]
-    }
   },
   async (input) => {
-    const llmResponse = await ai.generate({
-      model: 'googleai/gemini-2.5-flash',
-      tools: [addTaskTool],
-      prompt: `You are an AI emotional wellness coach in an app called Hugfeed. The user's name is ${input.userName}. Their preferred wellness activities are: ${input.preferredActivities.join(', ') || 'not specified'}.
+    
+    const prompt = `You are an AI emotional wellness coach in an app called Hugfeed. The user's name is ${input.userName}. Their preferred wellness activities are: ${input.preferredActivities.join(', ') || 'not specified'}.
 
 Your primary jobs are:
 1.  **Be a conversational wellness partner**: If the user is just chatting, asking for advice, or sharing feelings, respond in a friendly, supportive, and insightful manner. Use their calendar data to provide context-aware guidance. You can suggest tasks they can add manually.
@@ -84,26 +82,46 @@ User Query:
 "${input.query}"
 
 ${input.imageUri ? `The user has also uploaded an image. Analyze it in relation to the calendar data and user query to provide a more insightful response. Photo: {{media url=${input.imageUri}}}` : ''}
-`,
+`;
+
+    const llmResponse = await generate({
+      model: 'googleai/gemini-2.5-flash',
+      tools: [addTaskTool],
+      prompt: prompt,
     });
 
     const toolCalls = llmResponse.toolCalls();
     let generatedTasks: string[] = [];
+    
     if (toolCalls.length > 0) {
+        const toolResponses = [];
         for (const call of toolCalls) {
             if (call.tool === 'addTask') {
                 generatedTasks.push(...call.input.tasks);
+                // We need to send a response back to the model.
+                toolResponses.push(part.toolResponse(call.ref, { success: true }));
             }
         }
+        
+        // If there were tool calls, send the responses and get the final text response.
+        const finalResponse = await generate({
+            model: 'googleai/gemini-2.5-flash',
+            prompt: [prompt, llmResponse.message, ...toolResponses],
+        });
+
+        return {
+            response: finalResponse.text(),
+            suggestedTasks: [],
+            tasksToAdd: generatedTasks,
+        };
+
+    } else {
+         // No tool calls, just return the direct response.
+         return {
+            response: llmResponse.text(),
+            suggestedTasks: [],
+            tasksToAdd: generatedTasks,
+        };
     }
-    
-    // The previous prompt had `suggestedTasks` in its output schema, but we are now handling task generation through the tool.
-    // We can return an empty array for suggestedTasks unless we want to change the core logic to differentiate between tool tasks and manual suggestions.
-    // For now, let's keep it simple.
-    return {
-        response: llmResponse.text(),
-        suggestedTasks: [], // This was part of the original coach flow, can be repurposed if needed.
-        tasksToAdd: generatedTasks,
-    };
   }
 );
