@@ -176,18 +176,26 @@ export const AppStateProvider = ({ children }: { children: ReactNode }) => {
       const dayIndex = prevData.findIndex(day => isSameDay(day.date, entry.date));
       const newEntry: JournalEntry = { id: `journal-${Date.now()}`, ...entry };
       
-      if (dayIndex === -1) {
+      const newData = [...prevData];
+
+      if (dayIndex !== -1) {
+         // Update existing day
+         newData[dayIndex] = { 
+            ...newData[dayIndex], 
+            journalEntry: newEntry, 
+            mood: entry.mood 
+         };
+      } else {
+         // Create new day if it doesn't exist
          const newDay: CalendarDay = {
             date: startOfDay(entry.date),
             tasks: [],
             journalEntry: newEntry,
             mood: entry.mood,
          };
-         return [...prevData, newDay].sort((a,b) => b.date.getTime() - a.date.getTime());
+         newData.push(newDay);
+         newData.sort((a,b) => b.date.getTime() - a.date.getTime());
       }
-
-      const newData = [...prevData];
-      newData[dayIndex] = { ...newData[dayIndex], journalEntry: newEntry, mood: entry.mood };
       return newData;
     });
   };
