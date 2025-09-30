@@ -102,7 +102,7 @@ User Query:
     const llmResponse = await ai.generate({
       model: 'googleai/gemini-2.5-flash',
       tools: [addTaskTool],
-      prompt: [promptMessage],
+      prompt: promptMessage,
     });
 
     const toolCalls = llmResponse.toolCalls();
