@@ -1,7 +1,7 @@
 
 'use client';
 
-import { useState } from 'react';
+import React, { useState } from 'react';
 import { addDays, format, isSameDay, startOfWeek, subWeeks, addWeeks, eachDayOfInterval } from 'date-fns';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { ChevronLeft, ChevronRight, PlusCircle } from 'lucide-react';
@@ -180,21 +180,31 @@ export default function CalendarTabs() {
                     Day: ({ date, ...props }) => {
                       const dayData = calendarData.find(d => isSameDay(d.date, date));
                       const isSelected = props.selected;
-                      const buttonRef = React.useRef<HTMLButtonElement>(null);
                       
-                      // Using a div wrapper to apply custom styles while keeping react-day-picker's functionality
                       return (
-                        <div 
-                          className={\'\'\'
-                            relative w-full h-full flex items-center justify-center
-                            ${isSelected ? 'bg-primary text-primary-foreground rounded-md' : ''}
-                          \'\'\'
+                        <button
+                          type="button"
+                          {...props}
+                          className={cn(
+                            "h-9 w-9 p-0 font-normal relative",
+                            "focus-within:relative focus-within:z-20",
+                            isSelected ? "text-primary-foreground" : "",
+                            !isSelected && date < new Date() && !dayData?.mood ? "text-muted-foreground opacity-50" : "",
+                            props.className
+                          )}
                         >
-                            {format(date, 'd')}
-                            {dayData?.mood && (
-                                <span className="absolute bottom-1 text-xs">{MoodEmojis[dayData.mood]}</span>
-                            )}
-                        </div>
+                            <div 
+                              className={cn(
+                                'relative w-full h-full flex items-center justify-center rounded-md',
+                                isSelected ? 'bg-primary text-primary-foreground' : ''
+                              )}
+                            >
+                                {format(date, 'd')}
+                                {dayData?.mood && (
+                                    <span className="absolute bottom-1 text-xs">{MoodEmojis[dayData.mood]}</span>
+                                )}
+                            </div>
+                        </button>
                       );
                     },
                   }}
