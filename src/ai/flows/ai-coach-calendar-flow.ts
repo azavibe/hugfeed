@@ -66,8 +66,9 @@ const aiCoachCalendarIntegrationFlow = ai.defineFlow(
   },
   async (input) => {
     
+    // Construct the initial prompt with system instructions and user data.
     const promptParts = [
-      part.text(`You are an AI emotional wellness coach in an app called Hugfeed. The user's name is ${input.userName}. Their preferred wellness activities are: ${input.preferredActivities.join(', ') || 'not specified'}.
+      `You are an AI emotional wellness coach in an app called Hugfeed. The user's name is ${input.userName}. Their preferred wellness activities are: ${input.preferredActivities.join(', ') || 'not specified'}.
 
 Your primary jobs are:
 1.  **Be a conversational wellness partner**: If the user is just chatting, asking for advice, or sharing feelings, respond in a friendly, supportive, and insightful manner. Use their calendar data to provide context-aware guidance. You can suggest tasks they can add manually.
@@ -82,52 +83,61 @@ ${input.calendarData}
 
 User Query:
 "${input.query}"
-`)
+`
     ];
 
+    const promptMessage = {
+        role: 'user' as const,
+        content: [part.text(promptParts.join('\n'))]
+    };
+
     if (input.imageUri) {
-        promptParts.push(part.media({url: input.imageUri}));
-        promptParts.push(part.text('The user has also uploaded an image. Analyze it in relation to the calendar data and user query to provide a more insightful response.'));
+        promptMessage.content.push(part.media({url: input.imageUri}));
+        promptMessage.content.push(part.text('The user has also uploaded an image. Analyze it in relation to the calendar data and user query to provide a more insightful response.'));
     }
 
-
+    // First, send the prompt to the model to get its initial response, which may include tool calls.
     const llmResponse = await generate({
       model: 'googleai/gemini-2.5-flash',
       tools: [addTaskTool],
-      prompt: promptParts,
+      prompt: [promptMessage],
     });
 
     const toolCalls = llmResponse.toolCalls();
     let generatedTasks: string[] = [];
     
+    // Check if the model requested to use any tools.
     if (toolCalls.length > 0) {
         const toolResponses = [];
         for (const call of toolCalls) {
+            // We only have one tool, but this pattern is good for multiple tools.
             if (call.tool === 'addTask') {
-                generatedTasks.push(...call.input.tasks);
-                // We need to send a response back to the model.
+                // Store the tasks the AI wants to add.
+                generatedTasks = call.input.tasks;
+                // Create a response to send back to the model, confirming the tool "ran".
                 toolResponses.push(part.toolResponse(call.ref, { success: true }));
             }
         }
         
-        // If there were tool calls, send the responses and get the final text response.
+        // If there were tool calls, we must send the tool responses back to the model
+        // to get its final conversational text response.
         const finalResponse = await generate({
             model: 'googleai/gemini-2.5-flash',
-            prompt: [part.user(promptParts), llmResponse.message, ...toolResponses],
+            prompt: [promptMessage, llmResponse.message, ...toolResponses],
         });
 
         return {
             response: finalResponse.text(),
-            suggestedTasks: [],
+            suggestedTasks: [], // This can be populated in the future if needed.
             tasksToAdd: generatedTasks,
         };
 
     } else {
-         // No tool calls, just return the direct response.
+         // If no tools were called, the model's first response is the final one.
          return {
             response: llmResponse.text(),
             suggestedTasks: [],
-            tasksToAdd: generatedTasks,
+            tasksToAdd: [],
         };
     }
   }
