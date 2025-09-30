@@ -10,7 +10,7 @@
  */
 
 import {ai} from '@/ai/genkit';
-import {z, part, generate} from 'genkit';
+import {z, generate} from 'genkit';
 
 // Define a tool for adding tasks to the user's calendar
 const addTaskTool = ai.defineTool(
@@ -71,7 +71,9 @@ const aiCoachCalendarIntegrationFlow = ai.defineFlow(
     const promptMessage = {
         role: 'user' as const,
         content: [
-            part.text(`You are an AI emotional wellness coach in an app called Hugfeed. The user's name is ${input.userName}. Their preferred wellness activities are: ${activities}.
+            {
+                type: 'text',
+                text: `You are an AI emotional wellness coach in an app called Hugfeed. The user's name is ${input.userName}. Their preferred wellness activities are: ${activities}.
 
 Your primary jobs are:
 1.  **Be a conversational wellness partner**: If the user is just chatting, asking for advice, or sharing feelings, respond in a friendly, supportive, and insightful manner. Use their calendar data to provide context-aware guidance. You can suggest tasks they can add manually.
@@ -86,13 +88,14 @@ ${input.calendarData}
 
 User Query:
 "${input.query}"
-`)
+`
+            }
         ]
     };
 
     if (input.imageUri) {
-        promptMessage.content.push(part.media({url: input.imageUri}));
-        promptMessage.content.push(part.text('The user has also uploaded an image. Analyze it in relation to the calendar data and user query to provide a more insightful response.'));
+        promptMessage.content.push({ type: 'media', data: { url: input.imageUri } });
+        promptMessage.content.push({ type: 'text', text: 'The user has also uploaded an image. Analyze it in relation to the calendar data and user query to provide a more insightful response.' });
     }
 
     // First, send the prompt to the model to get its initial response, which may include tool calls.
@@ -114,7 +117,11 @@ User Query:
                 // Store the tasks the AI wants to add.
                 generatedTasks = call.input.tasks;
                 // Create a response to send back to the model, confirming the tool "ran".
-                toolResponses.push(part.toolResponse(call.ref, { success: true }));
+                toolResponses.push({
+                    type: 'toolResponse',
+                    ref: call.ref,
+                    data: { output: { success: true } },
+                });
             }
         }
         
@@ -126,7 +133,7 @@ User Query:
         });
 
         return {
-            response: finalResponse.text(),
+            response: finalResponse.text,
             suggestedTasks: [], // This can be populated in the future if needed.
             tasksToAdd: generatedTasks,
         };
@@ -134,7 +141,7 @@ User Query:
     } else {
          // If no tools were called, the model's first response is the final one.
          return {
-            response: llmResponse.text(),
+            response: llmResponse.text,
             suggestedTasks: [],
             tasksToAdd: [],
         };
