@@ -1,4 +1,3 @@
-
 'use server';
 
 /**
@@ -11,6 +10,8 @@
 
 import {ai} from '@/ai/genkit';
 import {z} from 'genkit';
+import { part } from '@genkit-ai/googleai';
+
 
 // Define a tool for adding tasks to the user's calendar
 const addTaskTool = ai.defineTool(
@@ -67,13 +68,10 @@ const aiCoachCalendarIntegrationFlow = ai.defineFlow(
     
     const activities = Array.isArray(input.preferredActivities) ? input.preferredActivities.join(', ') : 'not specified';
 
-    // Construct the initial prompt with system instructions and user data.
     const promptMessage = {
         role: 'user' as const,
         content: [
-            {
-                type: 'text',
-                text: `You are an AI emotional wellness coach in an app called Hugfeed. The user's name is ${input.userName}. Their preferred wellness activities are: ${activities}.
+            part.text(`You are an AI emotional wellness coach in an app called Hugfeed. The user's name is ${input.userName}. Their preferred wellness activities are: ${activities}.
 
 Your primary jobs are:
 1.  **Be a conversational wellness partner**: If the user is just chatting, asking for advice, or sharing feelings, respond in a friendly, supportive, and insightful manner. Use their calendar data to provide context-aware guidance. You can suggest tasks they can add manually.
@@ -87,16 +85,16 @@ Calendar Data (past 7 days):
 ${input.calendarData}
 
 User Query:
-"${input.query}"
-`
-            }
-        ]
+"${input.query}"`),
+            ...(input.imageUri
+              ? [
+                  part.media({ url: input.imageUri }),
+                  part.text('The user has also uploaded an image. Analyze it in relation to the calendar data and user query to provide a more insightful response.')
+                ]
+              : [])
+          ]
     };
 
-    if (input.imageUri) {
-        promptMessage.content.push({ type: 'media', data: { url: input.imageUri } });
-        promptMessage.content.push({ type: 'text', text: 'The user has also uploaded an image. Analyze it in relation to the calendar data and user query to provide a more insightful response.' });
-    }
 
     // First, send the prompt to the model to get its initial response, which may include tool calls.
     const llmResponse = await ai.generate({
