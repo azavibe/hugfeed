@@ -95,7 +95,7 @@ User Query:
     let generatedTasks: string[] = [];
     
     // Check if the model requested to use any tools.
-    if (toolCalls.length > 0) {
+    if (toolCalls && toolCalls.length > 0) {
         const toolResponses = [];
         for (const call of toolCalls) {
             // We only have one tool, but this pattern is good for multiple tools.
