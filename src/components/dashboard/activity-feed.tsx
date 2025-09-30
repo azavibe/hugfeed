@@ -5,7 +5,7 @@ import { useAppContext } from "@/context/app-context";
 import { isSameDay, format } from "date-fns";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "../ui/card";
 import { Button } from "../ui/button";
-import { PlusCircle, Coffee, Brain, Wind, Dumbbell, Heart } from "lucide-react";
+import { PlusCircle, Coffee, Brain, Wind, Dumbbell, Heart, Mail, Pencil, XCircle } from "lucide-react";
 import { JournalEntryDialog } from "./journal-entry-dialog";
 import { useState } from "react";
 import { Checkbox } from "../ui/checkbox";
@@ -26,20 +26,46 @@ export function ActivityFeed({ selectedDate }: { selectedDate: Date }) {
 
     const renderTask = (task: Task) => (
         <Card key={task.id} className="bg-background/30 backdrop-blur-sm border-white/20">
-            <CardContent className="p-4 flex items-center gap-4">
-                 <Checkbox 
-                    id={task.id} 
-                    checked={task.completed} 
-                    onCheckedChange={(checked) => updateTaskCompletion(task.id, !!checked)}
-                    className="border-foreground"
-                />
-                <div>
-                    <p className="font-semibold">{task.content}</p>
-                    <p className="text-sm text-muted-foreground">Task</p>
+            <CardContent className="p-4 flex items-center justify-between gap-4">
+                <div className="flex items-center gap-4">
+                    <Checkbox 
+                        id={task.id} 
+                        checked={task.completed} 
+                        onCheckedChange={(checked) => updateTaskCompletion(task.id, !!checked)}
+                        className="border-foreground"
+                    />
+                    <div>
+                        <p className="font-semibold">{task.content}</p>
+                        <p className="text-sm text-muted-foreground">Task</p>
+                    </div>
                 </div>
+                 {!task.completed && (
+                    <div className="flex gap-2">
+                        <Button variant="ghost" size="sm">
+                            <Pencil className="w-4 h-4 mr-2"/>
+                            Log
+                        </Button>
+                    </div>
+                )}
             </CardContent>
         </Card>
     );
+    
+    const renderGmailPlaceholder = () => {
+        return (
+             <Card className="bg-background/30 backdrop-blur-sm border-white/20">
+                <CardContent className="p-4 flex items-center gap-4">
+                    <div className="w-12 h-12 rounded-lg bg-red-400/20 flex items-center justify-center">
+                        <Mail className="w-6 h-6 text-red-400" />
+                    </div>
+                    <div>
+                        <p className="font-semibold text-lg">Project Deadline Reminder</p>
+                        <p className="text-sm text-red-400/80">From: manager@work.com</p>
+                    </div>
+                </CardContent>
+            </Card>
+        )
+    }
 
     const renderJournalEntry = () => {
         if (dayData?.journalEntry) {
@@ -98,6 +124,8 @@ export function ActivityFeed({ selectedDate }: { selectedDate: Date }) {
                  </div>
                )}
                
+               {renderGmailPlaceholder()}
+
                {renderWellnessBreak()}
 
                {renderJournalEntry()}

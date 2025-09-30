@@ -21,6 +21,7 @@ import {
   BarChart2,
   User,
   Gem,
+  CheckCircle,
 } from 'lucide-react';
 import { UserNav } from './user-nav';
 import { cn } from '@/lib/utils';
@@ -28,6 +29,7 @@ import { cn } from '@/lib/utils';
 const navItems = [
   { href: '/dashboard', icon: Calendar, label: 'Dashboard' },
   { href: '/dashboard/coach', icon: Bot, label: 'AI Coach' },
+  { href: '/dashboard/progress', icon: CheckCircle, label: 'Progress' },
   { href: '/dashboard/insights', icon: BarChart2, label: 'Insights' },
   { href: '/dashboard/profile', icon: User, label: 'Profile' },
 ];
@@ -47,7 +49,7 @@ export default function AppSidebar() {
         <SidebarMenu>
           {navItems.map((item) => (
             <SidebarMenuItem key={item.href}>
-              <Link href={item.href}>
+              <Link href={item.href} legacyBehavior={false}>
                 <SidebarMenuButton
                   isActive={pathname === item.href}
                   tooltip={item.label}
