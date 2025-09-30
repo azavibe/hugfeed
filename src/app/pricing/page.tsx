@@ -1,3 +1,4 @@
+
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { PlaceHolderImages } from "@/lib/placeholder-images";
@@ -19,8 +20,8 @@ export default function PricingPage() {
     ];
 
     return (
-        <div className="flex flex-col items-center justify-center min-h-screen bg-background p-4">
-             <Link href="/dashboard" className="absolute top-8 left-8 flex items-center gap-2 text-foreground">
+        <div className="flex flex-col items-center justify-center min-h-screen bg-background p-4 sm:p-8">
+             <Link href="/dashboard" className="absolute top-4 left-4 sm:top-8 sm:left-8 flex items-center gap-2 text-foreground">
                 <Logo className="w-8 h-8"/>
                 <span className="font-headline text-xl">Hugfeed</span>
             </Link>
@@ -30,7 +31,7 @@ export default function PricingPage() {
                     Unlock your full potential with unlimited access to journaling, AI coaching, and personalized wellness plans.
                 </p>
             </div>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-8 max-w-4xl w-full">
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 max-w-4xl w-full">
                 <Card className="flex flex-col">
                     {monthlyImage && (
                         <div className="relative h-48 w-full">

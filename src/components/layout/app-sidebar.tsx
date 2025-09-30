@@ -1,3 +1,4 @@
+
 'use client';
 
 import { usePathname } from 'next/navigation';
@@ -11,6 +12,7 @@ import {
   SidebarMenuItem,
   SidebarMenuButton,
   SidebarSeparator,
+  SidebarTrigger,
 } from '@/components/ui/sidebar';
 import { Button } from '@/components/ui/button';
 import { Logo } from '@/components/icons';
@@ -35,11 +37,14 @@ export default function AppSidebar() {
 
   return (
     <Sidebar>
-      <SidebarHeader>
+      <SidebarHeader className="flex items-center justify-between">
         <Link href="/dashboard" className="flex items-center gap-2">
           <Logo className="w-8 h-8 text-primary" />
           <span className="font-headline text-lg">Hugfeed</span>
         </Link>
+        <div className="md:hidden">
+            <SidebarTrigger />
+        </div>
       </SidebarHeader>
       <SidebarContent className="p-2">
         <SidebarMenu>

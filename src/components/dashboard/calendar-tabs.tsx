@@ -32,16 +32,16 @@ const WeeklyDatePicker = ({
       <Button variant="outline" size="icon" onClick={() => setCurrentWeek(subWeeks(currentWeek, 1))}>
         <ChevronLeft className="h-4 w-4" />
       </Button>
-      <div className="flex items-center gap-2">
+      <div className="flex items-center gap-1 sm:gap-2">
         {weekDays.map((day) => (
           <Button
             key={day.toString()}
             variant={isSameDay(day, selectedDate) ? 'default' : 'ghost'}
-            className="flex flex-col h-auto p-2"
+            className="flex flex-col h-auto p-1 sm:p-2"
             onClick={() => onDateChange(day)}
           >
             <span className="text-xs">{format(day, 'E')}</span>
-            <span className="text-lg font-bold">{format(day, 'd')}</span>
+            <span className="text-base sm:text-lg font-bold">{format(day, 'd')}</span>
           </Button>
         ))}
       </div>
@@ -139,7 +139,7 @@ export default function CalendarTabs() {
 
   return (
     <Tabs defaultValue="day">
-      <TabsList className="grid w-full grid-cols-3 md:w-[400px]">
+      <TabsList className="grid w-full grid-cols-3 max-w-md">
         <TabsTrigger value="day">Day</TabsTrigger>
         <TabsTrigger value="week">Week</TabsTrigger>
         <TabsTrigger value="month">Month</TabsTrigger>
@@ -177,14 +177,23 @@ export default function CalendarTabs() {
                 }}
                 className="p-0"
                 components={{
-                    Day: ({ date }) => {
+                    Day: ({ date, ...props }) => {
                       const dayData = calendarData.find(d => isSameDay(d.date, date));
+                      const isSelected = props.selected;
+                      const buttonRef = React.useRef<HTMLButtonElement>(null);
+                      
+                      // Using a div wrapper to apply custom styles while keeping react-day-picker's functionality
                       return (
-                        <div className="relative w-full h-full flex items-center justify-center">
-                          {format(date, 'd')}
-                          {dayData?.mood && (
-                            <span className="absolute bottom-1 text-xs">{MoodEmojis[dayData.mood]}</span>
-                          )}
+                        <div 
+                          className={\'\'\'
+                            relative w-full h-full flex items-center justify-center
+                            ${isSelected ? 'bg-primary text-primary-foreground rounded-md' : ''}
+                          \'\'\'
+                        >
+                            {format(date, 'd')}
+                            {dayData?.mood && (
+                                <span className="absolute bottom-1 text-xs">{MoodEmojis[dayData.mood]}</span>
+                            )}
                         </div>
                       );
                     },

@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState } from 'react';
@@ -85,13 +86,13 @@ export default function OnboardingFlow() {
     <Card>
       <CardHeader>
         <Progress value={progress} className="mb-4" />
-        {step === 1 && <CardTitle className="font-headline">About You</CardTitle>}
-        {step === 2 && <CardTitle className="font-headline">Your Goals</CardTitle>}
-        {step === 3 && <CardTitle className="font-headline">How are you feeling?</CardTitle>}
-        {step === 4 && <CardTitle className="font-headline">Let's check in</CardTitle>}
+        {step === 1 && <CardTitle className="font-headline text-2xl sm:text-3xl">About You</CardTitle>}
+        {step === 2 && <CardTitle className="font-headline text-2xl sm:text-3xl">Your Goals</CardTitle>}
+        {step === 3 && <CardTitle className="font-headline text-2xl sm:text-3xl">How are you feeling?</CardTitle>}
+        {step === 4 && <CardTitle className="font-headline text-2xl sm:text-3xl">Let's check in</CardTitle>}
         <CardDescription>This helps us tailor your experience.</CardDescription>
       </CardHeader>
-      <CardContent className="min-h-[250px]">
+      <CardContent className="min-h-[250px] sm:min-h-[280px]">
         {step === 1 && (
           <div className="space-y-4">
             <div className="grid gap-2">
@@ -108,7 +109,7 @@ export default function OnboardingFlow() {
           <div className="space-y-4">
              <div className="grid gap-2">
               <Label>What are your main goals for using Hugfeed?</Label>
-              <RadioGroup name="goals" onValueChange={(v) => handleRadioChange('goals', v)} value={formData.goals}>
+              <RadioGroup name="goals" onValueChange={(v) => handleRadioChange('goals', v)} value={formData.goals} className="space-y-2">
                 <div className="flex items-center space-x-2"><RadioGroupItem value="manage-stress" id="g1" /><Label htmlFor="g1">Manage stress & anxiety</Label></div>
                 <div className="flex items-center space-x-2"><RadioGroupItem value="self-reflection" id="g2" /><Label htmlFor="g2">Practice self-reflection</Label></div>
                 <div className="flex items-center space-x-2"><RadioGroupItem value="improve-mood" id="g3" /><Label htmlFor="g3">Improve my mood</Label></div>
@@ -121,7 +122,7 @@ export default function OnboardingFlow() {
           <div className="space-y-4">
              <div className="grid gap-2">
               <Label>What's contributing to how you feel today?</Label>
-              <RadioGroup name="causes" onValueChange={(v) => handleRadioChange('causes', v)} value={formData.causes}>
+              <RadioGroup name="causes" onValueChange={(v) => handleRadioChange('causes', v)} value={formData.causes} className="space-y-2">
                 <div className="flex items-center space-x-2"><RadioGroupItem value="work" id="c1" /><Label htmlFor="c1">Work or school</Label></div>
                 <div className="flex items-center space-x-2"><RadioGroupItem value="relationships" id="c2" /><Label htmlFor="c2">Relationships</Label></div>
                 <div className="flex items-center space-x-2"><RadioGroupItem value="health" id="c3" /><Label htmlFor="c3">Health and wellness</Label></div>
@@ -134,7 +135,7 @@ export default function OnboardingFlow() {
              <div className="space-y-6">
                 <div className="grid gap-2">
                     <Label>How was your sleep last night?</Label>
-                    <RadioGroup name="sleep" onValueChange={(v) => handleRadioChange('sleep', v)} value={formData.sleep} className="flex gap-4">
+                    <RadioGroup name="sleep" onValueChange={(v) => handleRadioChange('sleep', v)} value={formData.sleep} className="flex flex-wrap gap-4">
                         <div className="flex items-center space-x-2"><RadioGroupItem value="great" id="s1" /><Label htmlFor="s1">Great</Label></div>
                         <div className="flex items-center space-x-2"><RadioGroupItem value="ok" id="s2" /><Label htmlFor="s2">Okay</Label></div>
                         <div className="flex items-center space-x-2"><RadioGroupItem value="poor" id="s3" /><Label htmlFor="s3">Poor</Label></div>
@@ -142,7 +143,7 @@ export default function OnboardingFlow() {
                 </div>
                  <div className="grid gap-2">
                     <Label>Overall, how happy are you feeling right now?</Label>
-                    <RadioGroup name="happiness" onValueChange={(v) => handleRadioChange('happiness', v)} value={formData.happiness} className="flex gap-4">
+                    <RadioGroup name="happiness" onValueChange={(v) => handleRadioChange('happiness', v)} value={formData.happiness} className="flex flex-wrap gap-4">
                          <div className="flex items-center space-x-2"><RadioGroupItem value="very-happy" id="h1" /><Label htmlFor="h1">Very Happy</Label></div>
                          <div className="flex items-center space-x-2"><RadioGroupItem value="happy" id="h2" /><Label htmlFor="h2">Happy</Label></div>
                          <div className="flex items-center space-x-2"><RadioGroupItem value="neutral" id="h3" /><Label htmlFor="h3">Neutral</Label></div>

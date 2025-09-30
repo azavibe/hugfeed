@@ -49,7 +49,7 @@ export function JournalEntryDialog({
 
   return (
     <Dialog open={isOpen} onOpenChange={onOpenChange}>
-      <DialogContent>
+      <DialogContent className="sm:max-w-[425px]">
         <DialogHeader>
           <DialogTitle>Add Journal Entry for {format(selectedDate, 'PPP')}</DialogTitle>
           <DialogDescription>
@@ -77,7 +77,7 @@ export function JournalEntryDialog({
           </div>
           <div className="space-y-2">
             <Label>How are you feeling?</Label>
-            <div className="flex justify-around p-2 bg-muted rounded-lg">
+            <div className="flex flex-wrap justify-around p-2 bg-muted rounded-lg">
               {Object.entries(MoodEmojis).map(([mood, emoji]) => (
                 <button
                   key={mood}
@@ -86,6 +86,7 @@ export function JournalEntryDialog({
                     'text-3xl p-2 rounded-full transition-transform transform hover:scale-125',
                     selectedMood === mood ? 'bg-primary scale-110' : ''
                   )}
+                  title={mood}
                 >
                   {emoji}
                 </button>
@@ -93,13 +94,13 @@ export function JournalEntryDialog({
             </div>
           </div>
         </div>
-        <DialogFooter>
+        <DialogFooter className="flex-col-reverse sm:flex-row sm:justify-end gap-2 sm:gap-0">
           <DialogClose asChild>
-            <Button type="button" variant="secondary">
+            <Button type="button" variant="secondary" className="w-full sm:w-auto">
               Cancel
             </Button>
           </DialogClose>
-          <Button onClick={handleSave} disabled={!title || !content || !selectedMood}>
+          <Button onClick={handleSave} disabled={!title || !content || !selectedMood} className="w-full sm:w-auto">
             Save Entry
           </Button>
         </DialogFooter>
