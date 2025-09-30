@@ -119,7 +119,7 @@ export default function InsightsPage() {
               <Skeleton className="h-[250px] w-full" />
             ) : moodChartData.length > 0 ? (
               <ChartContainer config={moodChartConfig} className="min-h-[250px] w-full">
-                <RechartsBarChart accessibilityLayer data={moodChartData}>
+                <RechartsBarChart accessibilityLayer data={moodChartData} key={`mood-chart-${moodChartData.length}`}>
                   <CartesianGrid vertical={false} />
                   <XAxis
                     dataKey="date"
@@ -166,7 +166,7 @@ export default function InsightsPage() {
               <Skeleton className="h-[250px] w-full" />
             ) : weeklyCompletionData.length > 0 ? (
               <ChartContainer config={tasksChartConfig} className="min-h-[250px] w-full">
-                <RechartsBarChart accessibilityLayer data={weeklyCompletionData}>
+                <RechartsBarChart accessibilityLayer data={weeklyCompletionData} key={`tasks-chart-${weeklyCompletionData.length}`}>
                   <CartesianGrid vertical={false} />
                   <XAxis
                     dataKey="date"
