@@ -1,5 +1,6 @@
 
 export type UserProfile = {
+  id: string;
   name: string;
   pronouns?: string;
   goals?: string[];

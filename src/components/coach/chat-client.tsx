@@ -1,4 +1,6 @@
 
+import { useUser } from '@clerk/nextjs';
+
 'use client';
 
 import { useState, useRef, useEffect, ChangeEvent } from 'react';
@@ -14,7 +16,6 @@ import { useToast } from '@/hooks/use-toast';
 import { aiCoachCalendarIntegration } from '@/ai/flows/ai-coach-calendar-flow';
 import { useAppContext } from '@/context/app-context';
 import { format } from 'date-fns';
-import { useUser } from '@/firebase/auth/use-user';
 
 export default function ChatClient() {
     const { messages, setMessages, addTask, calendarData, userProfile } = useAppContext();

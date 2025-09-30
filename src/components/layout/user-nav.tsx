@@ -1,98 +1,24 @@
 
+
 'use client';
+import * as React from 'react';
 
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuGroup,
-  DropdownMenuItem,
-  DropdownMenuLabel,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu';
-import { Button } from '@/components/ui/button';
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import Link from 'next/link';
-import { LogIn, LogOut, Settings, User as UserIcon } from 'lucide-react';
-import { useAuth } from '@/firebase';
-import { useUser } from '@/firebase/auth/use-user';
-import { signOut } from 'firebase/auth';
-import { useRouter } from 'next/navigation';
-import { useAppContext } from '@/context/app-context';
-import { cn } from '@/lib/utils';
 
+import { useUser, UserButton, SignedIn, SignedOut, SignInButton } from '@clerk/nextjs';
 
 export function UserNav() {
-  const { user, loading: userLoading } = useUser();
-  const { userProfile, isDataLoading } = useAppContext();
-  const auth = useAuth();
-  const router = useRouter();
-  
-  const handleSignOut = async () => {
-    if (auth) {
-      await signOut(auth);
-      router.push('/');
-    }
-  };
-
-  const isLoading = userLoading || isDataLoading;
-
-  if (isLoading) {
-    return <div className="h-12 w-full animate-pulse bg-muted rounded-md"></div>;
-  }
-  
-  if (!user) {
-    return (
-      <Link href="/" className='w-full'>
-        <Button variant="outline" className='w-full justify-start group-data-[collapsible=icon]:justify-center group-data-[collapsible=icon]:w-8 group-data-[collapsible=icon]:h-8'>
-          <LogIn className="mr-2 h-4 w-4 group-data-[collapsible=icon]:mr-0" />
-          <span className="group-data-[collapsible=icon]:hidden">Login / Sign Up</span>
-        </Button>
-      </Link>
-    );
-  }
-
+  const { user } = useUser();
   return (
-    <DropdownMenu>
-      <DropdownMenuTrigger asChild>
-        <Button
-          variant="ghost"
-          className="relative h-12 w-full justify-start gap-2 px-2 group-data-[collapsible=icon]:w-8 group-data-[collapsible=icon]:h-8 group-data-[collapsible=icon]:p-0 group-data-[collapsible=icon]:justify-center"
-        >
-          <Avatar className="h-8 w-8">
-            <AvatarImage src={user.photoURL || ''} alt={user.displayName || ''} />
-            <AvatarFallback>{userProfile?.name?.charAt(0) || user.email?.charAt(0)}</AvatarFallback>
-          </Avatar>
-          <div className="text-left group-data-[collapsible=icon]:hidden">
-            <p className="text-sm font-medium truncate">{userProfile?.name || 'User'}</p>
-            <p className="text-xs text-muted-foreground truncate">{user.email}</p>
-          </div>
-        </Button>
-      </DropdownMenuTrigger>
-      <DropdownMenuContent className="w-56" align="end" forceMount>
-        <DropdownMenuLabel className="font-normal">
-          <div className="flex flex-col space-y-1">
-            <p className="text-sm font-medium leading-none truncate">{userProfile?.name || 'User'}</p>
-            <p className="text-xs leading-none text-muted-foreground truncate">
-              {user.email}
-            </p>
-          </div>
-        </DropdownMenuLabel>
-        <DropdownMenuSeparator />
-        <DropdownMenuGroup>
-          <Link href="/dashboard/profile">
-            <DropdownMenuItem>
-              <Settings className="mr-2 h-4 w-4" />
-              <span>Settings</span>
-            </DropdownMenuItem>
-          </Link>
-        </DropdownMenuGroup>
-        <DropdownMenuSeparator />
-          <DropdownMenuItem onClick={handleSignOut}>
-            <LogOut className="mr-2 h-4 w-4" />
-            <span>Log out</span>
-          </DropdownMenuItem>
-      </DropdownMenuContent>
-    </DropdownMenu>
+    <nav className="flex items-center gap-2">
+      <SignedIn>
+        <UserButton />
+        <span className="ml-2 font-medium">{user?.fullName || user?.username || 'User'}</span>
+      </SignedIn>
+      <SignedOut>
+        <SignInButton mode="modal">
+          <button className="border px-4 py-2 rounded">Login / Sign Up</button>
+        </SignInButton>
+      </SignedOut>
+    </nav>
   );
 }

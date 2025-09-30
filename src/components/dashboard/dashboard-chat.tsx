@@ -2,12 +2,12 @@
 'use client';
 
 import { useState, useRef, useEffect } from 'react';
+import { useUser } from '@clerk/nextjs';
 import { Button } from '../ui/button';
 import { Input } from '../ui/input';
 import { Mic, Send, Loader2 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { useAppContext } from '@/context/app-context';
-import { useUser } from '@/firebase/auth/use-user';
 import { aiCoachCalendarIntegration } from '@/ai/flows/ai-coach-calendar-flow';
 import { cn } from '@/lib/utils';
 import { format } from 'date-fns';
@@ -92,7 +92,7 @@ export function DashboardChat({ selectedDate }: { selectedDate: Date }) {
             }));
 
             const result = await aiCoachCalendarIntegration({
-                userId: user?.uid || 'guest-user',
+                userId: user?.id || 'guest-user',
                 userName: userProfile?.name || 'there',
                 preferredActivities: userProfile?.preferredActivities || [],
                 calendarData: JSON.stringify(calendarSummary),

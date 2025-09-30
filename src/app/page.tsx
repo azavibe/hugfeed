@@ -1,5 +1,6 @@
 
 'use client';
+import { useUser } from '@clerk/nextjs';
 import Image from 'next/image';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
@@ -11,52 +12,28 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { PlaceHolderImages } from '@/lib/placeholder-images';
 import { Logo } from '@/components/icons';
-import { useAuth } from '@/firebase';
-import { GoogleAuthProvider, signInWithPopup } from 'firebase/auth';
-import { useUser } from '@/firebase/auth/use-user';
 
 
 export default function LoginPage() {
   const loginImage = PlaceHolderImages.find((image) => image.id === 'login-background');
-  const auth = useAuth();
-  const { user, loading } = useUser();
+  const { user } = useUser();
   const router = useRouter();
 
   useEffect(() => {
-    if (!loading && user) {
+    if (user) {
       router.push('/dashboard');
     }
-  }, [user, loading, router]);
+  }, [user, router]);
 
 
-  const signInWithGoogle = async () => {
-    if (auth) {
-      const provider = new GoogleAuthProvider();
-      try {
-        await signInWithPopup(auth, provider);
-        router.push('/dashboard');
-      } catch (error) {
-        console.error('Error signing in with Google', error);
-      }
-    }
-  };
+  // Clerk handles sign in, so remove Firebase Google sign-in logic
   
-  if (loading) {
-    return (
-      <div className="w-full min-h-screen flex items-center justify-center">
-        <p>Loading...</p>
-      </div>
-    );
-  }
+  // No loading state needed with Clerk
   
   // If user is already logged in, this page will redirect via useEffect.
   // We don't want to show the login form if a user object exists.
   if (user) {
-    return (
-        <div className="w-full min-h-screen flex items-center justify-center">
-            <p>Redirecting...</p>
-        </div>
-    );
+    return null;
   }
 
   return (
@@ -95,9 +72,7 @@ export default function LoginPage() {
             <Button type="submit" className="w-full">
               Login
             </Button>
-            <Button variant="outline" className="w-full" onClick={signInWithGoogle}>
-              Login with Google
-            </Button>
+            {/* Clerk handles social login, so remove Firebase Google sign-in button */}
             <div className="relative">
               <div className="absolute inset-0 flex items-center">
                 <span className="w-full border-t" />

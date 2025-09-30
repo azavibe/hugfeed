@@ -1,7 +1,7 @@
 'use client';
+import { useUser } from '@clerk/nextjs';
 
 import ChatClient from '@/components/coach/chat-client';
-import { useUser } from '@/firebase/auth/use-user';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Gem } from 'lucide-react';
@@ -9,16 +9,8 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 
 export default function CoachPage() {
-  const { user, loading } = useUser();
+  const { user } = useUser();
   const router = useRouter();
-
-  if (loading) {
-    return (
-      <div className="flex items-center justify-center h-[calc(100vh-8rem)]">
-        <p>Loading...</p>
-      </div>
-    );
-  }
 
   // If user is a guest (not logged in), show the paywall/gate
   if (!user) {
