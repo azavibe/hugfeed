@@ -1,3 +1,4 @@
+
 'use server';
 
 /**
@@ -10,7 +11,7 @@
 
 import {ai} from '@/ai/genkit';
 import {z} from 'genkit';
-import {generate, part} from 'genkit/ai';
+import {generate, part} from 'genkit';
 
 // Define a tool for adding tasks to the user's calendar
 const addTaskTool = ai.defineTool(
@@ -65,7 +66,8 @@ const aiCoachCalendarIntegrationFlow = ai.defineFlow(
   },
   async (input) => {
     
-    const prompt = `You are an AI emotional wellness coach in an app called Hugfeed. The user's name is ${input.userName}. Their preferred wellness activities are: ${input.preferredActivities.join(', ') || 'not specified'}.
+    const promptParts = [
+      part.text(`You are an AI emotional wellness coach in an app called Hugfeed. The user's name is ${input.userName}. Their preferred wellness activities are: ${input.preferredActivities.join(', ') || 'not specified'}.
 
 Your primary jobs are:
 1.  **Be a conversational wellness partner**: If the user is just chatting, asking for advice, or sharing feelings, respond in a friendly, supportive, and insightful manner. Use their calendar data to provide context-aware guidance. You can suggest tasks they can add manually.
@@ -80,14 +82,19 @@ ${input.calendarData}
 
 User Query:
 "${input.query}"
+`)
+    ];
 
-${input.imageUri ? `The user has also uploaded an image. Analyze it in relation to the calendar data and user query to provide a more insightful response. Photo: {{media url=${input.imageUri}}}` : ''}
-`;
+    if (input.imageUri) {
+        promptParts.push(part.media({url: input.imageUri}));
+        promptParts.push(part.text('The user has also uploaded an image. Analyze it in relation to the calendar data and user query to provide a more insightful response.'));
+    }
+
 
     const llmResponse = await generate({
       model: 'googleai/gemini-2.5-flash',
       tools: [addTaskTool],
-      prompt: prompt,
+      prompt: promptParts,
     });
 
     const toolCalls = llmResponse.toolCalls();
@@ -106,7 +113,7 @@ ${input.imageUri ? `The user has also uploaded an image. Analyze it in relation 
         // If there were tool calls, send the responses and get the final text response.
         const finalResponse = await generate({
             model: 'googleai/gemini-2.5-flash',
-            prompt: [prompt, llmResponse.message, ...toolResponses],
+            prompt: [part.user(promptParts), llmResponse.message, ...toolResponses],
         });
 
         return {
