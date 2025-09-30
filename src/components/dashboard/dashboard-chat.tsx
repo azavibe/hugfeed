@@ -9,15 +9,13 @@ import { useToast } from '@/hooks/use-toast';
 import { useAppContext } from '@/context/app-context';
 import { useUser } from '@/firebase/auth/use-user';
 import { aiCoachCalendarIntegration } from '@/ai/flows/ai-coach-calendar-flow';
-import { Avatar, AvatarFallback, AvatarImage } from '../ui/avatar';
-import { Logo } from '../icons';
 import { cn } from '@/lib/utils';
 import { format } from 'date-fns';
 import { Message } from '@/lib/types';
 
 
 export function DashboardChat({ selectedDate }: { selectedDate: Date }) {
-    const { addTask, userProfile, messages, setMessages, calendarData } = useAppContext();
+    const { addTask, userProfile, setMessages, calendarData } = useAppContext();
     const { user } = useUser();
     const { toast } = useToast();
     
@@ -27,12 +25,7 @@ export function DashboardChat({ selectedDate }: { selectedDate: Date }) {
     
     const recognitionRef = useRef<SpeechRecognition | null>(null);
 
-    // Filter messages to show only the last 2, plus a welcome if it's the only one
-    const conversation = messages.length <= 3 ? messages : messages.slice(messages.length - 2);
-
-
     useEffect(() => {
-        // Ensure that 'window' is defined, i.e., we are on the client side.
         if (typeof window !== 'undefined') {
             const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
             if (SpeechRecognition) {
@@ -155,43 +148,6 @@ export function DashboardChat({ selectedDate }: { selectedDate: Date }) {
                     </Button>
                 </div>
             </div>
-
-            {conversation.length > 0 && (
-                <div className="space-y-4">
-                    {conversation.map((msg) => (
-                        <div key={msg.id} className={cn("flex items-start gap-3", msg.role === 'user' ? 'justify-end' : '')}>
-                           {msg.role === 'assistant' && (
-                                <Avatar className="w-8 h-8 border-2 border-primary">
-                                    <div className="bg-primary w-full h-full flex items-center justify-center">
-                                       <Logo className="w-5 h-5 text-primary-foreground" />
-                                    </div>
-                                </Avatar>
-                            )}
-                             <div className={cn("max-w-md p-3 rounded-lg text-sm", { 'bg-primary text-primary-foreground': msg.role === 'user', 'bg-muted': msg.role === 'assistant' })}>
-                                <p className="whitespace-pre-wrap">{msg.content}</p>
-                             </div>
-                             {msg.role === 'user' && (
-                                <Avatar className="w-8 h-8">
-                                    <AvatarImage src={user?.photoURL || undefined} />
-                                    <AvatarFallback>{userProfile?.name?.charAt(0) || user?.email?.charAt(0) || 'U'}</AvatarFallback>
-                                </Avatar>
-                            )}
-                        </div>
-                    ))}
-                    {isThinking && (
-                        <div className="flex items-start gap-3">
-                               <Avatar className="w-8 h-8 border-2 border-primary">
-                                    <div className="bg-primary w-full h-full flex items-center justify-center">
-                                       <Logo className="w-5 h-5 text-primary-foreground" />
-                                    </div>
-                                </Avatar>
-                            <div className="max-w-md p-3 rounded-lg bg-muted flex items-center">
-                                <Loader2 className="w-5 h-5 animate-spin text-muted-foreground" />
-                            </div>
-                        </div>
-                    )}
-                </div>
-            )}
         </div>
     );
 }
